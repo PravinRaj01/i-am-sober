@@ -66,3 +66,7 @@ verify_jwt = true
 
 [functions.detect-triggers]
 verify_jwt = true
+
+[functions.chat-with-assistant]
+verify_jwt = true
+

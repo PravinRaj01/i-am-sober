@@ -15,6 +15,7 @@ import MilestonesBadges from "@/components/MilestonesBadges";
 import MotivationCard from "@/components/MotivationCard";
 import SobrietyCounter from "@/components/SobrietyCounter";
 import { AIInsightsCard } from "@/components/AIInsightsCard";
+import ChatbotWidget from "@/components/ChatbotWidget";
 import { Calendar, Target, Heart, TrendingUp } from "lucide-react";
 import { useBackground } from "@/contexts/BackgroundContext";
 
@@ -223,6 +224,9 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* AI Chatbot Widget */}
+      <ChatbotWidget />
     </div>
   );
 };

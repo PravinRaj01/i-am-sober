@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { DateRange } from "react-day-picker";
+import AIGoalSuggestions from "@/components/AIGoalSuggestions";
 
 const Goals = () => {
   const [title, setTitle] = useState("");
@@ -289,22 +290,25 @@ const Goals = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl animate-fade-in">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold mb-2">Recovery Goals</h1>
             <p className="text-muted-foreground">Track your progress and celebrate achievements</p>
           </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <div className="flex gap-2">
+            <AIGoalSuggestions onGoalAdded={refetch} />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-40 bg-card/50 backdrop-blur-sm">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-popover/95 backdrop-blur-xl">
-              <SelectItem value="all">All Goals</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectContent className="bg-popover/95 backdrop-blur-xl">
+                <SelectItem value="all">All Goals</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {!goals || goals.length === 0 ? (

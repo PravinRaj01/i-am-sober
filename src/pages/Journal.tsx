@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, BookOpen, Loader2, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Plus, Pencil, Trash2, Search, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import SentimentBadge from "@/components/SentimentBadge";
+import TriggerDetectionAlert from "@/components/TriggerDetectionAlert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -30,6 +32,8 @@ const Journal = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [detectedTriggers, setDetectedTriggers] = useState<string[]>([]);
+  const [analyzingAll, setAnalyzingAll] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -56,6 +60,80 @@ const Journal = () => {
       entry.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Real-time trigger detection
+  useEffect(() => {
+    if (!content) {
+      setDetectedTriggers([]);
+      return;
+    }
+
+    const triggerWords = [
+      "craving", "temptation", "urge", "relapse", "drink", "alcohol", 
+      "drug", "smoke", "cigarette", "stressed", "anxious", "depressed"
+    ];
+
+    const detected = triggerWords.filter(word => 
+      content.toLowerCase().includes(word)
+    );
+
+    setDetectedTriggers(detected);
+  }, [content]);
+
+  const analyzeEntry = async (entryContent: string, entryId?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-journal-sentiment", {
+        body: { content: entryContent }
+      });
+
+      if (error) throw error;
+
+      if (entryId) {
+        await supabase
+          .from("journal_entries")
+          .update({
+            sentiment_label: data.sentiment.label,
+            sentiment_score: data.sentiment.score,
+            detected_triggers: data.triggers || []
+          } as any)
+          .eq("id", entryId);
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Analysis error:", error);
+      return null;
+    }
+  };
+
+  const analyzeAllEntries = async () => {
+    if (!entries || entries.length === 0) return;
+    
+    setAnalyzingAll(true);
+    try {
+    let analyzed = 0;
+      for (const entry of entries) {
+        if (!(entry as any).sentiment_label) {
+          await analyzeEntry(entry.content, entry.id);
+          analyzed++;
+        }
+      }
+      
+      refetch();
+      toast({
+        title: "Analysis complete!",
+        description: `Analyzed ${analyzed} entries`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzingAll(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -80,17 +158,26 @@ const Journal = () => {
           description: "Your journal entry has been updated.",
         });
       } else {
-        const { error } = await supabase.from("journal_entries").insert({
-          user_id: user.id,
-          title: title.trim() || null,
-          content: content.trim(),
-        });
+        const { data: newEntry, error } = await supabase
+          .from("journal_entries")
+          .insert({
+            user_id: user.id,
+            title: title.trim() || null,
+            content: content.trim(),
+          })
+          .select()
+          .single();
 
         if (error) throw error;
 
+        // Analyze sentiment
+        if (newEntry) {
+          await analyzeEntry(content.trim(), newEntry.id);
+        }
+
         toast({
           title: "Entry saved!",
-          description: "Your journal entry has been saved.",
+          description: "Your journal entry has been analyzed and saved.",
         });
       }
 
@@ -187,10 +274,11 @@ const Journal = () => {
                     onChange={(e) => setContent(e.target.value)}
                     rows={8}
                     required
-                    disabled={loading}
-                  />
-                </div>
-                <Button
+                     disabled={loading}
+                   />
+                   {!editingId && <TriggerDetectionAlert triggers={detectedTriggers} />}
+                 </div>
+                 <Button
                   type="submit"
                   className="w-full bg-gradient-primary"
                   disabled={loading}
@@ -217,8 +305,8 @@ const Journal = () => {
         </div>
 
         {entries && entries.length > 0 && (
-          <div className="mb-6">
-            <div className="relative">
+          <div className="mb-6 flex gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search entries..."
@@ -227,6 +315,19 @@ const Journal = () => {
                 className="pl-9 bg-card/50 backdrop-blur-sm"
               />
             </div>
+            <Button
+              variant="outline"
+              onClick={analyzeAllEntries}
+              disabled={analyzingAll}
+              className="bg-gradient-primary"
+            >
+              {analyzingAll ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Analyze All
+            </Button>
           </div>
         )}
 
@@ -247,9 +348,17 @@ const Journal = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-xl">
-                        {entry.title || "Untitled Entry"}
-                      </CardTitle>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CardTitle className="text-xl">
+                          {entry.title || "Untitled Entry"}
+                        </CardTitle>
+                        {(entry as any).sentiment_label && (
+                          <SentimentBadge 
+                            label={(entry as any).sentiment_label} 
+                            score={(entry as any).sentiment_score || 0} 
+                          />
+                        )}
+                      </div>
                       <CardDescription>
                         {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                       </CardDescription>

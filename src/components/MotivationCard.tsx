@@ -14,7 +14,7 @@ const MotivationCard = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("addiction_type")
+        .select("addiction_type, huggingface_token")
         .eq("id", user.id)
         .single();
 
@@ -23,13 +23,21 @@ const MotivationCard = () => {
     },
   });
 
-  const { data: quote, refetch } = useQuery({
-    queryKey: ["motivational-quote", profile?.addiction_type],
-    queryFn: () => {
-      const content = getAddictionContent(profile?.addiction_type || null);
-      const quotes = content.quotes;
-      return quotes[Math.floor(Math.random() * quotes.length)];
+  const { data: quote, refetch, isLoading } = useQuery({
+    queryKey: ["ai-motivation", new Date().toDateString()],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-motivation");
+        if (error) throw error;
+        return data.message;
+      } catch (error) {
+        // Fallback to static quotes
+        const content = getAddictionContent(profile?.addiction_type || null);
+        const quotes = content.quotes;
+        return quotes[Math.floor(Math.random() * quotes.length)];
+      }
     },
+    enabled: !!profile?.huggingface_token,
   });
 
   return (
@@ -40,15 +48,23 @@ const MotivationCard = () => {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Daily Motivation
           </h3>
-          <p className="text-foreground italic text-lg">{quote}</p>
+          {isLoading ? (
+            <div className="flex items-center text-muted-foreground">
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Generating...
+            </div>
+          ) : (
+            <p className="text-foreground italic text-lg">{quote}</p>
+          )}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => refetch()}
             className="mt-2 hover:bg-primary/10"
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            New Quote
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            New Message
           </Button>
         </div>
       </div>
