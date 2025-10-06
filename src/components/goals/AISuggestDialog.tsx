@@ -35,13 +35,31 @@ const AISuggestDialog = ({ open, onClose, onGoalCreated }: AISuggestDialogProps)
         body: { userPrompt }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("AI suggestion error:", error);
+        
+        // Provide specific error messages
+        if (error.message?.includes("429")) {
+          throw new Error("Rate limit reached. Please try again in a minute.");
+        } else if (error.message?.includes("402")) {
+          throw new Error("AI credits depleted. Please add credits in Settings.");
+        }
+        
+        throw error;
+      }
       
       setSuggestions(data.suggestions || []);
+      
+      if (!data.suggestions || data.suggestions.length === 0) {
+        toast({
+          title: "No suggestions generated",
+          description: "Try describing your goals more specifically.",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Failed to generate suggestions",
-        description: error.message,
+        description: error.message || "Unable to connect to AI. Please try again.",
         variant: "destructive",
       });
     } finally {

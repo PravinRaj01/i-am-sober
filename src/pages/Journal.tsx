@@ -171,7 +171,18 @@ const Journal = () => {
         body: { text: entry.content, entryId },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Sentiment analysis error:", error);
+        
+        // Provide specific error messages
+        if (error.message?.includes("429")) {
+          throw new Error("Rate limit reached. Please try again in a minute.");
+        } else if (error.message?.includes("402")) {
+          throw new Error("AI credits depleted. Please add credits in Settings.");
+        }
+        
+        throw error;
+      }
 
       toast({
         title: "Sentiment analyzed",
@@ -182,7 +193,7 @@ const Journal = () => {
     } catch (error: any) {
       toast({
         title: "Analysis failed",
-        description: error.message,
+        description: error.message || "Unable to analyze sentiment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -288,8 +299,9 @@ const Journal = () => {
         {!entries || entries.length === 0 ? (
           <Card className="text-center py-16 bg-card/50 backdrop-blur-lg overflow-hidden border-border/40 shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-card/60 animate-fade-up">
             <div className="mb-6">
-              <img
-                src="/src/assets/empty-journal.png"
+              <StorageImage
+                bucket="illustrations"
+                path="empty-journal.png"
                 alt="Start your recovery journal"
                 className="mx-auto h-48 w-auto rounded-lg opacity-90 drop-shadow-lg transition-all duration-300 hover:opacity-100 hover:scale-105"
               />

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, AlertCircle } from "lucide-react";
+import { Calendar, AlertCircle, Share2 } from "lucide-react";
+import ShareMilestoneDialog from "./community/ShareMilestoneDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +26,7 @@ const SobrietyCounter = ({ startDate, onRelapseRecorded }: SobrietyCounterProps)
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = async () => {
@@ -134,8 +136,12 @@ const SobrietyCounter = ({ startDate, onRelapseRecorded }: SobrietyCounterProps)
         </div>
 
         <div className="pt-4 flex gap-2">
-          <Button className="flex-1 bg-success hover:bg-success/90" disabled>
-            Going Strong! 💪
+          <Button 
+            className="flex-1 bg-success hover:bg-success/90"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Milestone
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -161,6 +167,12 @@ const SobrietyCounter = ({ startDate, onRelapseRecorded }: SobrietyCounterProps)
           </AlertDialog>
         </div>
       </div>
+
+      <ShareMilestoneDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        daysSober={time.days}
+      />
     </Card>
   );
 };

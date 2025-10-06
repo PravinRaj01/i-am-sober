@@ -22,6 +22,7 @@ import ChatbotDrawer, { ChatbotState } from "@/components/chatbot/ChatbotDrawer"
 import AITokenAlert from "@/components/AITokenAlert";
 import StorageImage from "@/components/StorageImage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import RecentCommunityCard from "@/components/community/RecentCommunityCard";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -234,8 +235,9 @@ const Dashboard = () => {
             <MotivationCard />
           </div>
 
-          {/* Right Column - Activity Feed */}
-          <div className="lg:col-span-1">
+          {/* Right Column - Activity Feed & Community */}
+          <div className="lg:col-span-1 space-y-6">
+            <RecentCommunityCard />
             <ActivityFeed />
           </div>
         </div>

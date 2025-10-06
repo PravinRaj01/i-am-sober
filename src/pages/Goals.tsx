@@ -326,8 +326,9 @@ const Goals = () => {
         {!goals || goals.length === 0 ? (
           <Card className="text-center py-16 bg-card/50 backdrop-blur-lg overflow-hidden border-border/40 shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-card/60 animate-fade-up">
             <div className="mb-6">
-              <img
-                src="/src/assets/empty-goals.png"
+              <StorageImage
+                bucket="illustrations"
+                path="empty-goals.png"
                 alt="Set your recovery goals"
                 className="mx-auto h-48 w-auto rounded-lg opacity-90 drop-shadow-lg transition-all duration-300 hover:opacity-100 hover:scale-105"
               />

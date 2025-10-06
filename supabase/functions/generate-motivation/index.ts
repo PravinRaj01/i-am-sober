@@ -11,6 +11,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  console.log(`[generate-motivation] Request started at ${new Date().toISOString()}`);
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -21,8 +24,11 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser(token);
 
     if (!user) {
+      console.error("[generate-motivation] Unauthorized request");
       throw new Error("Unauthorized");
     }
+
+    console.log(`[generate-motivation] User: ${user.id}`);
 
     // Get user's profile
     const { data: profile } = await supabase
@@ -36,12 +42,17 @@ serve(async (req) => {
       (new Date().getTime() - new Date(profile?.sobriety_start_date || new Date()).getTime()) / (1000 * 60 * 60 * 24)
     );
 
+    console.log(`[generate-motivation] Days sober: ${daysSober}, addiction: ${profile?.addiction_type}`);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      console.error("[generate-motivation] LOVABLE_API_KEY not configured");
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
     const prompt = `Generate a short, inspiring motivational message for someone in recovery from ${profile?.addiction_type || "addiction"}. They are ${daysSober} days into their journey. Keep it under 100 characters, positive, and encouraging.`;
+
+    console.log("[generate-motivation] Calling Lovable AI Gateway...");
 
     try {
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -57,8 +68,28 @@ serve(async (req) => {
         }),
       });
 
+      const responseTime = Date.now() - startTime;
+      console.log(`[generate-motivation] API response in ${responseTime}ms, status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`AI API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`[generate-motivation] API error:`, errorText);
+        
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI credits depleted. Please add credits." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        throw new Error(`AI API error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -71,13 +102,15 @@ serve(async (req) => {
           message = firstSentence + '.';
         }
       }
+
+      console.log(`[generate-motivation] Success! Generated: "${message}"`);
       
       return new Response(
         JSON.stringify({ message }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (error) {
-      console.error("AI API error:", error);
+      console.error("[generate-motivation] AI API error:", error);
       
       // Return fallback message
       const fallbackMessages = [
@@ -95,9 +128,12 @@ serve(async (req) => {
       );
     }
   } catch (error: any) {
-    console.error("Error in generate-motivation:", error);
+    console.error("[generate-motivation] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
