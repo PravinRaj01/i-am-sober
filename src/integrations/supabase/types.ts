@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          requirements: Json
+          title: string
+          xp_reward: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          icon: string
+          id?: string
+          requirements: Json
+          title: string
+          xp_reward?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          requirements?: Json
+          title?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_ins: {
         Row: {
           created_at: string
@@ -37,6 +108,57 @@ export type Database = {
           mood?: string
           notes?: string | null
           urge_intensity?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_interactions: {
+        Row: {
+          anonymous: boolean | null
+          created_at: string | null
+          id: string
+          message: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          anonymous?: boolean | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          anonymous?: boolean | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -115,6 +237,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          sentiment: Json | null
           title: string | null
           updated_at: string
           user_id: string
@@ -123,6 +246,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          sentiment?: Json | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -131,6 +255,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          sentiment?: Json | null
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -163,37 +288,55 @@ export type Database = {
           addiction_type: string | null
           background_image_url: string | null
           created_at: string
-          huggingface_token: string | null
+          current_streak: number | null
+          gemini_api_key: string | null
           id: string
+          last_check_in: string | null
+          level: number | null
+          longest_streak: number | null
           onboarding_completed: boolean | null
+          points: number | null
           privacy_settings: Json | null
           pseudonym: string | null
           sobriety_start_date: string
           updated_at: string
+          xp: number | null
         }
         Insert: {
           addiction_type?: string | null
           background_image_url?: string | null
           created_at?: string
-          huggingface_token?: string | null
+          current_streak?: number | null
+          gemini_api_key?: string | null
           id: string
+          last_check_in?: string | null
+          level?: number | null
+          longest_streak?: number | null
           onboarding_completed?: boolean | null
+          points?: number | null
           privacy_settings?: Json | null
           pseudonym?: string | null
           sobriety_start_date?: string
           updated_at?: string
+          xp?: number | null
         }
         Update: {
           addiction_type?: string | null
           background_image_url?: string | null
           created_at?: string
-          huggingface_token?: string | null
+          current_streak?: number | null
+          gemini_api_key?: string | null
           id?: string
+          last_check_in?: string | null
+          level?: number | null
+          longest_streak?: number | null
           onboarding_completed?: boolean | null
+          points?: number | null
           privacy_settings?: Json | null
           pseudonym?: string | null
           sobriety_start_date?: string
           updated_at?: string
+          xp?: number | null
         }
         Relationships: []
       }
@@ -307,6 +450,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
