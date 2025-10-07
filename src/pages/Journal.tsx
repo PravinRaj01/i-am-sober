@@ -301,7 +301,7 @@ const Journal = () => {
             <div className="mb-6">
               <StorageImage
                 bucket="illustrations"
-                path="empty-journal.png"
+                path="8.png"
                 alt="Start your recovery journal"
                 className="mx-auto h-48 w-auto rounded-lg opacity-90 drop-shadow-lg transition-all duration-300 hover:opacity-100 hover:scale-105"
               />

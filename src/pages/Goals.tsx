@@ -328,7 +328,7 @@ const Goals = () => {
             <div className="mb-6">
               <StorageImage
                 bucket="illustrations"
-                path="empty-goals.png"
+                path="11.png"
                 alt="Set your recovery goals"
                 className="mx-auto h-48 w-auto rounded-lg opacity-90 drop-shadow-lg transition-all duration-300 hover:opacity-100 hover:scale-105"
               />

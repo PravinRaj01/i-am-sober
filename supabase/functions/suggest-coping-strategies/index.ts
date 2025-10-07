@@ -37,8 +37,6 @@ Format the response as a JSON array with objects containing "title", "descriptio
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1000,
       }),
     });
 
