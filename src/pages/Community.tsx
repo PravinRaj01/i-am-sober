@@ -43,8 +43,13 @@ const Community = () => {
       const { data, error } = await supabase
         .from("community_interactions")
         .select(`
-          *,
-          profiles!inner(pseudonym)
+          id,
+          message,
+          anonymous,
+          created_at,
+          type,
+          user_id,
+          profiles(pseudonym)
         `)
         .eq("type", "milestone")
         .order("created_at", { ascending: false })
@@ -135,7 +140,7 @@ const Community = () => {
             {interactions.map((interaction: any) => (
               <MilestoneCard
                 key={interaction.id}
-                pseudonym={interaction.profiles.pseudonym}
+                pseudonym={interaction.profiles?.pseudonym}
                 milestone={interaction.message}
                 createdAt={interaction.created_at}
                 isAnonymous={interaction.anonymous}

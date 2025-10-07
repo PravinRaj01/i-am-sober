@@ -15,8 +15,13 @@ const RecentCommunityCard = () => {
       const { data, error } = await supabase
         .from("community_interactions")
         .select(`
-          *,
-          profiles!inner(pseudonym)
+          id,
+          message,
+          anonymous,
+          created_at,
+          type,
+          user_id,
+          profiles(pseudonym)
         `)
         .eq("type", "milestone")
         .order("created_at", { ascending: false })
@@ -61,7 +66,7 @@ const RecentCommunityCard = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {milestone.anonymous ? "Anonymous" : milestone.profiles.pseudonym}
+                {milestone.anonymous ? "Anonymous" : (milestone.profiles?.pseudonym || "Community Member")}
               </p>
               <p className="text-xs text-muted-foreground line-clamp-2">
                 {milestone.message}

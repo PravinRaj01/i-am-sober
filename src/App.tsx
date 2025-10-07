@@ -14,6 +14,7 @@ import CopingTools from "./pages/CopingTools";
 import Achievements from "./pages/Achievements";
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
+import Community from "./pages/Community";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const AppContent = () => {
                   <Route path="/coping" element={<CopingTools />} />
                   <Route path="/progress" element={<Progress />} />
                   <Route path="/achievements" element={<Achievements />} />
+                  <Route path="/community" element={<Community />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

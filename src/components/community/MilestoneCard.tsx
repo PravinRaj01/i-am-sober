@@ -4,7 +4,7 @@ import { Award, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface MilestoneCardProps {
-  pseudonym: string;
+  pseudonym?: string;
   milestone: string;
   message?: string;
   createdAt: string;
@@ -28,7 +28,7 @@ const MilestoneCard = ({ pseudonym, milestone, message, createdAt, isAnonymous }
               </Avatar>
               <div>
                 <p className="font-semibold text-sm">
-                  {isAnonymous ? "Anonymous" : pseudonym}
+                  {isAnonymous ? "Anonymous" : (pseudonym || "Community Member")}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   achieved a milestone!
