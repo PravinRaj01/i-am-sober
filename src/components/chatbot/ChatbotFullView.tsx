@@ -142,7 +142,7 @@ const ChatbotFullView = ({
                       <MessageSquare className="h-4 w-4 mr-2 shrink-0" />
                       <input
                         type="text"
-                        value={conv.title || "New Conversation"}
+                        value={conv.title ?? "New Conversation"}
                         onChange={(e) => {
                           onConversationTitleChange(conv.id, e.target.value);
                         }}
