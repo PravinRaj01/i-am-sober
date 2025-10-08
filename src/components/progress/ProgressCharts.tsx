@@ -18,11 +18,7 @@ interface ProgressData {
 export function ProgressCharts() {
   const [activeTab, setActiveTab] = useState("emotions");
   const chartRef = useRef<Chart | null>(null);
-  const chartRef2 = useRef<Chart | null>(null);
-  const chartRef3 = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const canvasRef2 = useRef<HTMLCanvasElement | null>(null);
-  const canvasRef3 = useRef<HTMLCanvasElement | null>(null);
 
   const { data: checkIns } = useQuery({
     queryKey: ["insights-check-ins"],
@@ -81,34 +77,32 @@ export function ProgressCharts() {
     },
   });
 
-  // Create emotional state chart
   useEffect(() => {
-    if (activeTab === "emotions" && checkIns && canvasRef.current) {
-      console.debug("Emotions tab: Creating chart with", checkIns.length, "check-ins");
-      
+    const createChart = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      // Destroy any existing chart on the canvas before creating a new one
       if (chartRef.current) {
-        console.debug("Emotions tab: Destroying existing chart");
         chartRef.current.destroy();
         chartRef.current = null;
       }
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) {
+        existingChart.destroy();
+      }
 
-      const labels = checkIns.map(ci => format(new Date(ci.created_at), "MMM d"));
-      const moodMap: Record<string, number> = {
-        'great': 10, 'good': 8, 'okay': 5, 'struggling': 3, 'bad': 1
-      };
-      const moodData = checkIns.map(ci => moodMap[ci.mood] || 5);
-      const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
+      let chartConfig: any = null;
 
-      requestAnimationFrame(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        
-        // Ensure no existing chart is bound to this canvas
-        const existing = Chart.getChart(canvas);
-        if (existing) existing.destroy();
-        
-        console.debug("Emotions tab: Initializing chart");
-        chartRef.current = new Chart(canvas, {
+      if (activeTab === "emotions" && checkIns) {
+        const labels = checkIns.map(ci => format(new Date(ci.created_at), "MMM d"));
+        const moodMap: Record<string, number> = {
+          'great': 10, 'good': 8, 'okay': 5, 'struggling': 3, 'bad': 1
+        };
+        const moodData = checkIns.map(ci => moodMap[ci.mood] || 5);
+        const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
+
+        chartConfig = {
           type: "line",
           data: {
             labels,
@@ -133,58 +127,16 @@ export function ProgressCharts() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              y: {
-                min: 0,
-                max: 10,
-                grid: {
-                  color: "rgba(255, 255, 255, 0.1)",
-                },
-              },
-              x: {
-                grid: {
-                  display: false,
-                },
-              },
+              y: { min: 0, max: 10, grid: { color: "rgba(255, 255, 255, 0.1)" } },
+              x: { grid: { display: false } },
             },
           },
-        });
-      });
-    }
+        };
+      } else if (activeTab === "urges" && checkIns) {
+        const labels = checkIns.map(ci => format(new Date(ci.created_at), "MMM d"));
+        const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
 
-    return () => {
-      const canvas = canvasRef.current;
-      const existing = canvas ? Chart.getChart(canvas) : null;
-      if (existing) {
-        console.debug("Emotions tab: Cleanup - destroying chart");
-        existing.destroy();
-      }
-      chartRef.current = null;
-    };
-  }, [activeTab, checkIns]);
-
-  // Create urge tracking chart
-  useEffect(() => {
-    if (activeTab === "urges" && checkIns && canvasRef2.current) {
-      console.debug("Urges tab: Creating chart with", checkIns.length, "check-ins");
-      
-      if (chartRef2.current) {
-        console.debug("Urges tab: Destroying existing chart");
-        chartRef2.current.destroy();
-        chartRef2.current = null;
-      }
-
-      const labels = checkIns.map(ci => format(new Date(ci.created_at), "MMM d"));
-      const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
-
-      requestAnimationFrame(() => {
-        const canvas = canvasRef2.current;
-        if (!canvas) return;
-        
-        const existing = Chart.getChart(canvas);
-        if (existing) existing.destroy();
-        
-        console.debug("Urges tab: Initializing chart");
-        chartRef2.current = new Chart(canvas, {
+        chartConfig = {
           type: "bar",
           data: {
             labels,
@@ -202,60 +154,18 @@ export function ProgressCharts() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              y: {
-                beginAtZero: true,
-                max: 10,
-                grid: {
-                  color: "rgba(255, 255, 255, 0.1)",
-                },
-              },
-              x: {
-                grid: {
-                  display: false,
-                },
-              },
+              y: { beginAtZero: true, max: 10, grid: { color: "rgba(255, 255, 255, 0.1)" } },
+              x: { grid: { display: false } },
             },
           },
-        });
-      });
-    }
+        };
+      } else if (activeTab === "goals" && goals) {
+        const completedOverTime = goals.reduce((acc: number[], goal) => {
+          const lastValue = acc.length > 0 ? acc[acc.length - 1] : 0;
+          return [...acc, goal.completed ? lastValue + 1 : lastValue];
+        }, []);
 
-    return () => {
-      const canvas = canvasRef2.current;
-      const existing = canvas ? Chart.getChart(canvas) : null;
-      if (existing) {
-        console.debug("Urges tab: Cleanup - destroying chart");
-        existing.destroy();
-      }
-      chartRef2.current = null;
-    };
-  }, [activeTab, checkIns]);
-
-  // Create goals progress chart
-  useEffect(() => {
-    if (activeTab === "goals" && goals && canvasRef3.current) {
-      console.debug("Goals tab: Creating chart with", goals.length, "goals");
-      
-      if (chartRef3.current) {
-        console.debug("Goals tab: Destroying existing chart");
-        chartRef3.current.destroy();
-        chartRef3.current = null;
-      }
-
-      const completedOverTime = goals.reduce((acc: number[], goal) => {
-        const lastValue = acc.length > 0 ? acc[acc.length - 1] : 0;
-        return [...acc, goal.completed ? lastValue + 1 : lastValue];
-      }, []);
-
-      requestAnimationFrame(() => {
-        const canvas = canvasRef3.current;
-        if (!canvas) return;
-        
-        const existing = Chart.getChart(canvas);
-        if (existing) existing.destroy();
-        
-        console.debug("Goals tab: Initializing chart");
-        chartRef3.current = new Chart(canvas, {
+        chartConfig = {
           type: "line",
           data: {
             labels: goals.map(g => format(new Date(g.created_at), "MMM d")),
@@ -274,33 +184,50 @@ export function ProgressCharts() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-              y: {
-                beginAtZero: true,
-                grid: {
-                  color: "rgba(255, 255, 255, 0.1)",
-                },
-              },
-              x: {
-                grid: {
-                  display: false,
-                },
-              },
+              y: { beginAtZero: true, grid: { color: "rgba(255, 255, 255, 0.1)" } },
+              x: { grid: { display: false } },
             },
           },
-        });
-      });
-    }
-
-    return () => {
-      const canvas = canvasRef3.current;
-      const existing = canvas ? Chart.getChart(canvas) : null;
-      if (existing) {
-        console.debug("Goals tab: Cleanup - destroying chart");
-        existing.destroy();
+        };
       }
-      chartRef3.current = null;
+
+      if (chartConfig) {
+        requestAnimationFrame(() => {
+          if (canvasRef.current) {
+            chartRef.current = new Chart(canvasRef.current, chartConfig);
+          }
+        });
+      }
     };
-  }, [activeTab, goals]);
+
+    createChart();
+
+    // Cleanup function to destroy the chart on component unmount or before re-render
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [activeTab, checkIns, goals]);
+
+  const renderContent = () => {
+    const hasData = (activeTab === 'emotions' && checkIns && checkIns.length > 0) ||
+                    (activeTab === 'urges' && checkIns && checkIns.length > 0) ||
+                    (activeTab === 'goals' && goals && goals.length > 0);
+    
+    const noDataMessage = activeTab === 'goals' ? 'No goals to display yet' : 'No check-ins to display yet';
+
+    return hasData ? (
+      <div className="relative w-full h-[300px] sm:h-[350px]">
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
+      </div>
+    ) : (
+      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+        {noDataMessage}
+      </div>
+    );
+  };
 
   return (
     <Card className="bg-card/50 backdrop-blur-lg border-border/50">
@@ -331,39 +258,15 @@ export function ProgressCharts() {
           </TabsList>
 
           <TabsContent value="emotions" className="space-y-4">
-            {checkIns && checkIns.length > 0 ? (
-              <div className="relative w-full h-[300px] sm:h-[350px]">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No check-ins to display yet
-              </div>
-            )}
+            {renderContent()}
           </TabsContent>
 
           <TabsContent value="urges" className="space-y-4">
-            {checkIns && checkIns.length > 0 ? (
-              <div className="relative w-full h-[300px] sm:h-[350px]">
-                <canvas ref={canvasRef2} className="absolute inset-0 w-full h-full"></canvas>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No check-ins to display yet
-              </div>
-            )}
+            {renderContent()}
           </TabsContent>
 
           <TabsContent value="goals" className="space-y-4">
-            {goals && goals.length > 0 ? (
-              <div className="relative w-full h-[300px] sm:h-[350px]">
-                <canvas ref={canvasRef3} className="absolute inset-0 w-full h-full"></canvas>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No goals to display yet
-              </div>
-            )}
+            {renderContent()}
           </TabsContent>
         </Tabs>
       </CardContent>
