@@ -131,7 +131,7 @@ const ChatbotFullView = ({
                     <DropdownMenuItem
                       className="flex-1 cursor-pointer"
                       onSelect={(e) => {
-                        // Prevent selection when interacting with the input
+                        // Prevent selection when interacting with the input, but allow selection of the item itself
                         if ((e.target as HTMLElement).closest('input')) {
                           e.preventDefault();
                           return;
@@ -162,6 +162,7 @@ const ChatbotFullView = ({
                                 (e.target as HTMLInputElement).blur();
                             }
                         }}
+                        onClick={(e) => e.stopPropagation()}
                         className="bg-transparent border-none outline-none flex-1 text-sm w-full"
                       />
                     </DropdownMenuItem>
