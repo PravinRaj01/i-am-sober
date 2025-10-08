@@ -94,6 +94,15 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
     enabled: state !== 'closed' && !!currentConversationId,
   });
 
+  const handleConversationTitleChange = (convId: string, newTitle: string) => {
+    queryClient.setQueryData(['conversations'], (oldData: any[] | undefined) => {
+      if (!oldData) return [];
+      return oldData.map(conv => 
+        conv.id === convId ? { ...conv, title: newTitle } : conv
+      );
+    });
+  };
+
   const saveMessageMutation = useMutation({
     mutationFn: async ({ role, content }: { role: string; content: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -316,6 +325,7 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
             onNewConversation={handleNewConversation}
             onDeleteConversation={handleDeleteConversation}
             onClearChat={handleClearChat}
+            onConversationTitleChange={handleConversationTitleChange}
           />
         )}
       </Card>

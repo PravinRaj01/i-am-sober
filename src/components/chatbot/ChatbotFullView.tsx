@@ -49,6 +49,7 @@ interface ChatbotFullViewProps {
   onNewConversation: () => void;
   onDeleteConversation: (id: string) => void;
   onClearChat: () => void;
+  onConversationTitleChange: (id: string, title: string) => void;
 }
 
 const ChatbotFullView = ({
@@ -70,6 +71,7 @@ const ChatbotFullView = ({
   onNewConversation,
   onDeleteConversation,
   onClearChat,
+  onConversationTitleChange,
 }: ChatbotFullViewProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -134,8 +136,11 @@ const ChatbotFullView = ({
                       <input
                         type="text"
                         value={conv.title || "New Conversation"}
-                        onChange={async (e) => {
+                        onChange={(e) => {
                           e.stopPropagation();
+                          onConversationTitleChange(conv.id, e.target.value);
+                        }}
+                        onBlur={async (e) => {
                           const { data: { user } } = await supabase.auth.getUser();
                           if (!user) return;
                           
