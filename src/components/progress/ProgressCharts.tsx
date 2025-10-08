@@ -84,7 +84,10 @@ export function ProgressCharts() {
   // Create emotional state chart
   useEffect(() => {
     if (activeTab === "emotions" && checkIns && canvasRef.current) {
+      console.debug("Emotions tab: Creating chart with", checkIns.length, "check-ins");
+      
       if (chartRef.current) {
+        console.debug("Emotions tab: Destroying existing chart");
         chartRef.current.destroy();
         chartRef.current = null;
       }
@@ -96,50 +99,56 @@ export function ProgressCharts() {
       const moodData = checkIns.map(ci => moodMap[ci.mood] || 5);
       const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
 
-      chartRef.current = new Chart(canvasRef.current, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Mood",
-              data: moodData,
-              borderColor: "hsl(var(--primary))",
-              tension: 0.4,
-              fill: false,
-            },
-            {
-              label: "Urge Intensity",
-              data: urgeData,
-              borderColor: "hsl(var(--warning))",
-              tension: 0.4,
-              fill: false,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            y: {
-              min: 0,
-              max: 10,
-              grid: {
-                color: "rgba(255, 255, 255, 0.1)",
+      requestAnimationFrame(() => {
+        if (!canvasRef.current) return;
+        
+        console.debug("Emotions tab: Initializing chart");
+        chartRef.current = new Chart(canvasRef.current, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Mood",
+                data: moodData,
+                borderColor: "hsl(var(--primary))",
+                tension: 0.4,
+                fill: false,
               },
-            },
-            x: {
-              grid: {
-                display: false,
+              {
+                label: "Urge Intensity",
+                data: urgeData,
+                borderColor: "hsl(var(--warning))",
+                tension: 0.4,
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                min: 0,
+                max: 10,
+                grid: {
+                  color: "rgba(255, 255, 255, 0.1)",
+                },
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
               },
             },
           },
-        },
+        });
       });
     }
 
     return () => {
       if (chartRef.current) {
+        console.debug("Emotions tab: Cleanup - destroying chart");
         chartRef.current.destroy();
         chartRef.current = null;
       }
@@ -149,7 +158,10 @@ export function ProgressCharts() {
   // Create urge tracking chart
   useEffect(() => {
     if (activeTab === "urges" && checkIns && canvasRef2.current) {
+      console.debug("Urges tab: Creating chart with", checkIns.length, "check-ins");
+      
       if (chartRef2.current) {
+        console.debug("Urges tab: Destroying existing chart");
         chartRef2.current.destroy();
         chartRef2.current = null;
       }
@@ -157,43 +169,49 @@ export function ProgressCharts() {
       const labels = checkIns.map(ci => format(new Date(ci.created_at), "MMM d"));
       const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
 
-      chartRef2.current = new Chart(canvasRef2.current, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Urge Intensity",
-              data: urgeData,
-              backgroundColor: "hsl(var(--warning) / 0.5)",
-              borderColor: "hsl(var(--warning))",
-              borderWidth: 1,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 10,
-              grid: {
-                color: "rgba(255, 255, 255, 0.1)",
+      requestAnimationFrame(() => {
+        if (!canvasRef2.current) return;
+        
+        console.debug("Urges tab: Initializing chart");
+        chartRef2.current = new Chart(canvasRef2.current, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Urge Intensity",
+                data: urgeData,
+                backgroundColor: "hsl(var(--warning) / 0.5)",
+                borderColor: "hsl(var(--warning))",
+                borderWidth: 1,
               },
-            },
-            x: {
-              grid: {
-                display: false,
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 10,
+                grid: {
+                  color: "rgba(255, 255, 255, 0.1)",
+                },
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
               },
             },
           },
-        },
+        });
       });
     }
 
     return () => {
       if (chartRef2.current) {
+        console.debug("Urges tab: Cleanup - destroying chart");
         chartRef2.current.destroy();
         chartRef2.current = null;
       }
@@ -203,7 +221,10 @@ export function ProgressCharts() {
   // Create goals progress chart
   useEffect(() => {
     if (activeTab === "goals" && goals && canvasRef3.current) {
+      console.debug("Goals tab: Creating chart with", goals.length, "goals");
+      
       if (chartRef3.current) {
+        console.debug("Goals tab: Destroying existing chart");
         chartRef3.current.destroy();
         chartRef3.current = null;
       }
@@ -213,43 +234,49 @@ export function ProgressCharts() {
         return [...acc, goal.completed ? lastValue + 1 : lastValue];
       }, []);
 
-      chartRef3.current = new Chart(canvasRef3.current, {
-        type: "line",
-        data: {
-          labels: goals.map(g => format(new Date(g.created_at), "MMM d")),
-          datasets: [
-            {
-              label: "Completed Goals",
-              data: completedOverTime,
-              borderColor: "hsl(var(--success))",
-              backgroundColor: "hsl(var(--success) / 0.1)",
-              tension: 0.4,
-              fill: true,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: "rgba(255, 255, 255, 0.1)",
+      requestAnimationFrame(() => {
+        if (!canvasRef3.current) return;
+        
+        console.debug("Goals tab: Initializing chart");
+        chartRef3.current = new Chart(canvasRef3.current, {
+          type: "line",
+          data: {
+            labels: goals.map(g => format(new Date(g.created_at), "MMM d")),
+            datasets: [
+              {
+                label: "Completed Goals",
+                data: completedOverTime,
+                borderColor: "hsl(var(--success))",
+                backgroundColor: "hsl(var(--success) / 0.1)",
+                tension: 0.4,
+                fill: true,
               },
-            },
-            x: {
-              grid: {
-                display: false,
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: "rgba(255, 255, 255, 0.1)",
+                },
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
               },
             },
           },
-        },
+        });
       });
     }
 
     return () => {
       if (chartRef3.current) {
+        console.debug("Goals tab: Cleanup - destroying chart");
         chartRef3.current.destroy();
         chartRef3.current = null;
       }
@@ -284,21 +311,39 @@ export function ProgressCharts() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="emotions" className="space-y-4">
-            <div className="aspect-[2/1] w-full">
-              <canvas ref={canvasRef}></canvas>
+          <TabsContent value="emotions" className="space-y-4" forceMount>
+            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
+              {checkIns && checkIns.length > 0 ? (
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No check-ins to display yet
+                </div>
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="urges" className="space-y-4">
-            <div className="aspect-[2/1] w-full">
-              <canvas ref={canvasRef2}></canvas>
+          <TabsContent value="urges" className="space-y-4" forceMount>
+            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
+              {checkIns && checkIns.length > 0 ? (
+                <canvas ref={canvasRef2} className="absolute inset-0 w-full h-full"></canvas>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No check-ins to display yet
+                </div>
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="goals" className="space-y-4">
-            <div className="aspect-[2/1] w-full">
-              <canvas ref={canvasRef3}></canvas>
+          <TabsContent value="goals" className="space-y-4" forceMount>
+            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
+              {goals && goals.length > 0 ? (
+                <canvas ref={canvasRef3} className="absolute inset-0 w-full h-full"></canvas>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No goals to display yet
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
