@@ -106,7 +106,7 @@ const ChatbotFullView = ({
   );
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Conversation Management */}
       {conversations.length > 0 && (
         <div className="px-4 pt-4 pb-2 border-b border-primary/10 flex items-center justify-between gap-2">
@@ -274,9 +274,9 @@ const ChatbotFullView = ({
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col flex-1 pt-4 overflow-hidden" style={{ height: 'calc(100% - 9rem)' }}>
+      <CardContent className="flex-1 pt-4 overflow-hidden">
         {/* Messages Area */}
-        <ScrollArea className="flex-1 pr-4 mb-4 overflow-y-auto">
+        <ScrollArea className="h-full pr-4">
           <div className="space-y-4">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-3">
@@ -332,33 +332,40 @@ const ChatbotFullView = ({
 
       {streaming && !streamingMessage && <TypingIndicator />}
 
-      <div className="p-4 border-t border-primary/10">
-        <div className="relative">
-          <Input
-            value={input}
-            onChange={(e) => onInputChange(e.target.value)}
-            placeholder="Ask me anything about your recovery..."
-            disabled={streaming}
-            className="flex-1 bg-background/50 border-primary/20 focus:border-primary/40 transition-colors"
-          />
-          <Button
-            type="submit"
-            disabled={!input.trim() || streaming}
-            size="icon"
-            className="bg-gradient-primary hover:shadow-glow transition-all"
-          >
-            {streaming ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+      <div className="p-4 border-t border-primary/10 mt-auto">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSend();
+          }}
+        >
+          <div className="relative">
+            <Input
+              value={input}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder="Ask me anything about your recovery..."
+              disabled={streaming}
+              className="pr-12 h-11 text-base flex-1 bg-background/50 border-primary/20 focus:border-primary/40 transition-colors"
+            />
+            <Button
+              type="submit"
+              disabled={!input.trim() || streaming}
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-primary hover:shadow-glow transition-all h-8 w-8"
+            >
+              {streaming ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </form>
         <p className="text-xs text-muted-foreground text-center mt-2">
           Powered by AI • Here to help you succeed
         </p>
       </div>
-    </>
+    </div>
   );
 };
 
