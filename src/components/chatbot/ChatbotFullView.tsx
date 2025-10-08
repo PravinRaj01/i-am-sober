@@ -127,17 +127,23 @@ const ChatbotFullView = ({
                 <DropdownMenuLabel>Conversations</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {conversations.map((conv) => (
-                  <div key={conv.id} className="flex items-center group">
+                  <div key={conv.id} className="flex items-center group pr-2">
                     <DropdownMenuItem
                       className="flex-1 cursor-pointer"
-                      onSelect={() => onConversationChange(conv.id)}
+                      onSelect={(e) => {
+                        // Prevent selection when interacting with the input
+                        if ((e.target as HTMLElement).closest('input')) {
+                          e.preventDefault();
+                          return;
+                        }
+                        onConversationChange(conv.id);
+                      }}
                     >
                       <MessageSquare className="h-4 w-4 mr-2 shrink-0" />
                       <input
                         type="text"
                         value={conv.title || "New Conversation"}
                         onChange={(e) => {
-                          e.stopPropagation();
                           onConversationTitleChange(conv.id, e.target.value);
                         }}
                         onBlur={async (e) => {
@@ -151,8 +157,12 @@ const ChatbotFullView = ({
                           
                           queryClient.invalidateQueries({ queryKey: ["conversations"] });
                         }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-transparent border-none outline-none flex-1 text-sm"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                            }
+                        }}
+                        className="bg-transparent border-none outline-none flex-1 text-sm w-full"
                       />
                     </DropdownMenuItem>
                     {conversations.length > 1 && (
