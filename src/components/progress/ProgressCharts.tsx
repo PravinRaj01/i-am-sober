@@ -100,10 +100,15 @@ export function ProgressCharts() {
       const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
 
       requestAnimationFrame(() => {
-        if (!canvasRef.current) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        
+        // Ensure no existing chart is bound to this canvas
+        const existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
         
         console.debug("Emotions tab: Initializing chart");
-        chartRef.current = new Chart(canvasRef.current, {
+        chartRef.current = new Chart(canvas, {
           type: "line",
           data: {
             labels,
@@ -147,11 +152,13 @@ export function ProgressCharts() {
     }
 
     return () => {
-      if (chartRef.current) {
+      const canvas = canvasRef.current;
+      const existing = canvas ? Chart.getChart(canvas) : null;
+      if (existing) {
         console.debug("Emotions tab: Cleanup - destroying chart");
-        chartRef.current.destroy();
-        chartRef.current = null;
+        existing.destroy();
       }
+      chartRef.current = null;
     };
   }, [activeTab, checkIns]);
 
@@ -170,10 +177,14 @@ export function ProgressCharts() {
       const urgeData = checkIns.map(ci => ci.urge_intensity || 0);
 
       requestAnimationFrame(() => {
-        if (!canvasRef2.current) return;
+        const canvas = canvasRef2.current;
+        if (!canvas) return;
+        
+        const existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
         
         console.debug("Urges tab: Initializing chart");
-        chartRef2.current = new Chart(canvasRef2.current, {
+        chartRef2.current = new Chart(canvas, {
           type: "bar",
           data: {
             labels,
@@ -210,11 +221,13 @@ export function ProgressCharts() {
     }
 
     return () => {
-      if (chartRef2.current) {
+      const canvas = canvasRef2.current;
+      const existing = canvas ? Chart.getChart(canvas) : null;
+      if (existing) {
         console.debug("Urges tab: Cleanup - destroying chart");
-        chartRef2.current.destroy();
-        chartRef2.current = null;
+        existing.destroy();
       }
+      chartRef2.current = null;
     };
   }, [activeTab, checkIns]);
 
@@ -235,10 +248,14 @@ export function ProgressCharts() {
       }, []);
 
       requestAnimationFrame(() => {
-        if (!canvasRef3.current) return;
+        const canvas = canvasRef3.current;
+        if (!canvas) return;
+        
+        const existing = Chart.getChart(canvas);
+        if (existing) existing.destroy();
         
         console.debug("Goals tab: Initializing chart");
-        chartRef3.current = new Chart(canvasRef3.current, {
+        chartRef3.current = new Chart(canvas, {
           type: "line",
           data: {
             labels: goals.map(g => format(new Date(g.created_at), "MMM d")),
@@ -275,11 +292,13 @@ export function ProgressCharts() {
     }
 
     return () => {
-      if (chartRef3.current) {
+      const canvas = canvasRef3.current;
+      const existing = canvas ? Chart.getChart(canvas) : null;
+      if (existing) {
         console.debug("Goals tab: Cleanup - destroying chart");
-        chartRef3.current.destroy();
-        chartRef3.current = null;
+        existing.destroy();
       }
+      chartRef3.current = null;
     };
   }, [activeTab, goals]);
 
