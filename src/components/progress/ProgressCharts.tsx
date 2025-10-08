@@ -311,40 +311,40 @@ export function ProgressCharts() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="emotions" className="space-y-4" forceMount>
-            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
-              {checkIns && checkIns.length > 0 ? (
+          <TabsContent value="emotions" className="space-y-4">
+            {checkIns && checkIns.length > 0 ? (
+              <div className="relative w-full h-[300px] sm:h-[350px]">
                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No check-ins to display yet
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No check-ins to display yet
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="urges" className="space-y-4" forceMount>
-            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
-              {checkIns && checkIns.length > 0 ? (
+          <TabsContent value="urges" className="space-y-4">
+            {checkIns && checkIns.length > 0 ? (
+              <div className="relative w-full h-[300px] sm:h-[350px]">
                 <canvas ref={canvasRef2} className="absolute inset-0 w-full h-full"></canvas>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No check-ins to display yet
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No check-ins to display yet
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="goals" className="space-y-4" forceMount>
-            <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
-              {goals && goals.length > 0 ? (
+          <TabsContent value="goals" className="space-y-4">
+            {goals && goals.length > 0 ? (
+              <div className="relative w-full h-[300px] sm:h-[350px]">
                 <canvas ref={canvasRef3} className="absolute inset-0 w-full h-full"></canvas>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No goals to display yet
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No goals to display yet
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
