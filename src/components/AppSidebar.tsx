@@ -29,7 +29,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar, open, setOpen } = useSidebar();
+  const { state, toggleSidebar, open, setOpen, isMobile: sidebarMobile } = useSidebar();
   const isMobile = useIsMobile();
   const collapsed = state === "collapsed";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -46,19 +46,15 @@ export function AppSidebar() {
     fetchLogo();
   }, []);
 
-  // On mobile, sidebar should be closed by default
-  useEffect(() => {
+  // Close sidebar on mobile when clicking a link
+  const handleNavClick = () => {
     if (isMobile && open) {
       setOpen(false);
     }
-  }, [isMobile]);
-
-  // Close sidebar on mobile when clicking a link
-  const handleNavClick = () => {
-    if (isMobile) {
-      setOpen(false);
-    }
   };
+
+  // Check if sidebar should be visible on mobile
+  const isVisible = isMobile ? open : true;
 
   return (
     <>
@@ -74,7 +70,7 @@ export function AppSidebar() {
         className={`h-screen bg-card/95 backdrop-blur-xl border-r border-border/30 transition-all duration-300 flex flex-col shrink-0 ${
           isMobile ? 'fixed left-0 top-0 z-50' : 'relative z-50'
         } ${
-          isMobile && !open ? '-translate-x-full' : 'translate-x-0'
+          !isVisible ? '-translate-x-full' : 'translate-x-0'
         } ${
           collapsed && !isMobile ? "w-16" : "w-60"
         }`}
