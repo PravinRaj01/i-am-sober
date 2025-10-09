@@ -104,40 +104,40 @@ const SobrietyCounter = ({ startDate, onRelapseRecorded }: SobrietyCounterProps)
   };
 
   return (
-    <Card className="p-8 bg-card/50 backdrop-blur-lg border-warning/30 shadow-elegant relative overflow-hidden">
+    <Card className="p-4 sm:p-6 md:p-8 bg-card/50 backdrop-blur-lg border-warning/30 shadow-elegant relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-success/5" />
-      <div className="relative text-center space-y-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative text-center space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between mb-2 sm:mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/progress")} className="h-8 w-8">
-            <Calendar className="h-5 w-5 text-warning" />
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
           </Button>
-          <h2 className="text-lg font-semibold text-foreground">Days Sober</h2>
-          <div className="w-5" />
+          <h2 className="text-base sm:text-lg font-semibold text-foreground">Days Sober</h2>
+          <div className="w-8" />
         </div>
         
         <div className="space-y-2">
-          <div className="text-7xl font-bold text-warning animate-counter">{time.days}</div>
-          <div className="text-sm text-muted-foreground">Keep going strong!</div>
+          <div className="text-5xl sm:text-6xl md:text-7xl font-bold text-warning animate-counter">{time.days}</div>
+          <div className="text-xs sm:text-sm text-muted-foreground">Keep going strong!</div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/50">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-border/50">
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-foreground">{time.hours}</div>
+            <div className="text-xl sm:text-2xl font-bold text-foreground">{time.hours}</div>
             <div className="text-xs text-muted-foreground">Hours</div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-foreground">{time.minutes}</div>
+            <div className="text-xl sm:text-2xl font-bold text-foreground">{time.minutes}</div>
             <div className="text-xs text-muted-foreground">Minutes</div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-foreground">{time.seconds}</div>
+            <div className="text-xl sm:text-2xl font-bold text-foreground">{time.seconds}</div>
             <div className="text-xs text-muted-foreground">Seconds</div>
           </div>
         </div>
 
-        <div className="pt-4 flex gap-2">
+        <div className="pt-3 sm:pt-4 flex flex-col sm:flex-row gap-2">
           <Button 
-            className="flex-1 bg-success hover:bg-success/90"
+            className="flex-1 bg-success hover:bg-success/90 text-sm sm:text-base"
             onClick={() => setShareDialogOpen(true)}
           >
             <Share2 className="h-4 w-4 mr-2" />
@@ -145,19 +145,23 @@ const SobrietyCounter = ({ startDate, onRelapseRecorded }: SobrietyCounterProps)
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="border-destructive/50 text-destructive hover:bg-destructive/10" disabled={loading}>
+              <Button 
+                variant="outline" 
+                className="flex-1 border-destructive/50 text-destructive hover:bg-destructive/10 text-sm sm:text-base" 
+                disabled={loading}
+              >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 I Relapsed
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>Record a Relapse?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will reset your sobriety counter and record the relapse. Remember, recovery is a journey, not perfection. You can start again right now.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleRelapse} disabled={loading} className="bg-destructive hover:bg-destructive/90">
                   Record Relapse

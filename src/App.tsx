@@ -27,10 +27,10 @@ const AppContent = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<OnboardingWizard />} />
         <Route path="/*" element={
-          <SidebarProvider defaultOpen={true}>
+          <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background relative">
               <AppSidebar />
-              <main className="flex-1 overflow-auto relative z-10">
+              <main className="flex-1 overflow-auto relative z-10 w-full">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/check-in" element={<CheckIn />} />

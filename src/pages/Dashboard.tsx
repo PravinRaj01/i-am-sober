@@ -3,12 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, differenceInHours } from "date-fns";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import StatCard from "@/components/StatCard";
 import ActivityFeed from "@/components/ActivityFeed";
 import MilestonesBadges from "@/components/MilestonesBadges";
@@ -147,10 +146,11 @@ const Dashboard = () => {
       )}
       
       {/* Header */}
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 shadow-soft">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40 shadow-soft">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="hidden sm:flex items-center gap-2">
               <StorageImage
                 bucket="logos"
                 path="logo.png"
@@ -159,35 +159,33 @@ const Dashboard = () => {
               />
               <div className="h-6 w-px bg-border/50" />
             </div>
-            <div className="max-w-md">
-              <h1 className="text-lg font-semibold truncate">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-sm sm:text-lg font-semibold truncate">
                 Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {profile.pseudonym}
               </h1>
-              <p className="text-sm text-muted-foreground truncate">Keep up the amazing work on your recovery journey!</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate hidden sm:block">Keep up the amazing work on your recovery journey!</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
+          <Button variant="outline" size="sm" onClick={handleSignOut} className="shrink-0">
+            <LogOut className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Sign Out</span>
           </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 overflow-auto relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-auto relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
           {/* Left Column - Main Stats Grid */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Sobriety Counter - Full width prominent placement */}
-            <div className="col-span-2">
-              <SobrietyCounter
-                startDate={profile.sobriety_start_date}
-                onRelapseRecorded={refetchProfile}
-              />
-            </div>
+            <SobrietyCounter
+              startDate={profile.sobriety_start_date}
+              onRelapseRecorded={refetchProfile}
+            />
             
             {/* Stats Grid */}
-            <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <StatCard
                 title="Days Sober"
                 value={daysSober}
@@ -236,7 +234,7 @@ const Dashboard = () => {
           </div>
 
           {/* Right Column - Activity Feed & Community */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <RecentCommunityCard />
             <ActivityFeed />
           </div>
