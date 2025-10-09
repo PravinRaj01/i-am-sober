@@ -1,101 +1,90 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, ExternalLink } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const AITokenAlert = () => {
   const [showAlert, setShowAlert] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const navigate = useNavigate();
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile-token-check"],
+  const { data: user } = useQuery({
+    queryKey: ["user-check"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("gemini_api_key")
-        .eq("id", user.id)
-        .single();
-
-      if (error) return null;
-      return data;
+      return user;
     },
   });
 
   useEffect(() => {
-    // Check if alert was dismissed in this session
-    const alertDismissed = sessionStorage.getItem("ai-token-alert-dismissed");
+    // Check if user has permanently dismissed this alert
+    const permanentlyDismissed = localStorage.getItem("lovable-ai-welcome-dismissed");
     
-    if (alertDismissed) {
-      setDismissed(true);
+    if (permanentlyDismissed) {
       return;
     }
 
-    // Show alert after 2 seconds if no token
-    if (profile && !profile.gemini_api_key && !dismissed) {
+    // Show alert after 2 seconds for new users
+    if (user) {
       const timer = setTimeout(() => {
         setShowAlert(true);
       }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [profile, dismissed]);
+  }, [user]);
 
   const handleDismiss = () => {
-    sessionStorage.setItem("ai-token-alert-dismissed", "true");
+    if (dontShowAgain) {
+      localStorage.setItem("lovable-ai-welcome-dismissed", "true");
+    }
     setShowAlert(false);
-    setDismissed(true);
-  };
-
-  const handleGoToSettings = () => {
-    setShowAlert(false);
-    navigate("/settings");
   };
 
   return (
     <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-      <AlertDialogContent className="bg-popover/95 backdrop-blur-xl border-warning/50">
+      <AlertDialogContent className="bg-popover/95 backdrop-blur-xl border-primary/30">
         <AlertDialogHeader>
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-5 w-5 text-warning" />
-            <AlertDialogTitle>AI Features Disabled</AlertDialogTitle>
+            <Sparkles className="h-5 w-5 text-primary" />
+            <AlertDialogTitle>Welcome to Recovery Journey!</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="space-y-3">
             <p>
-              To enable AI-powered insights, journal analysis, and smart suggestions, 
-              please add your Google Gemini API key.
+              Your app is powered by <strong>Lovable AI Gateway</strong>, which provides 
+              access to advanced AI models including Google Gemini and OpenAI GPT.
             </p>
             <p className="text-sm">
-              🎁 <strong>100% Free:</strong> No credit card required, free tier available
+              ✨ <strong>Built-in AI:</strong> No API keys needed, AI features work out of the box
+            </p>
+            <p className="text-sm">
+              🔒 <strong>Secure:</strong> All AI requests are processed securely through our gateway
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleDismiss}>Dismiss</AlertDialogCancel>
-          <Button
-            variant="outline"
-            onClick={() => window.open("https://aistudio.google.com/app/apikey", "_blank")}
-          >
-            Get Free API Key
-            <ExternalLink className="h-4 w-4 ml-2" />
-          </Button>
-          <AlertDialogAction onClick={handleGoToSettings} className="bg-gradient-primary">
-            Go to Settings
+        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex items-center gap-2 mr-auto">
+            <Checkbox 
+              id="dont-show" 
+              checked={dontShowAgain}
+              onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+            />
+            <Label htmlFor="dont-show" className="text-sm cursor-pointer">
+              Don't show this again
+            </Label>
+          </div>
+          <AlertDialogAction onClick={handleDismiss} className="bg-gradient-primary">
+            Got it!
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
