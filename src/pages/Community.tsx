@@ -207,10 +207,14 @@ const Community = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={() => navigate("/")} className="hidden lg:inline-flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden lg:inline">Back</span>
+              </Button>
               <SidebarTrigger className="lg:hidden" />
               <h1 className="text-xl font-semibold md:hidden">Community</h1>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0 sm:hidden">
+            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0 lg:hidden">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>
