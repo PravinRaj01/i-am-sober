@@ -210,7 +210,7 @@ const Community = () => {
               <SidebarTrigger className="lg:hidden" />
               <h1 className="text-xl font-semibold md:hidden">Community</h1>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0">
+            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0 sm:hidden">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>

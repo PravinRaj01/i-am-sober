@@ -303,7 +303,7 @@ const Goals = () => {
               <Sparkles className="h-4 w-4 mr-2 text-primary group-hover:text-primary/70" />
               <span className="hidden sm:inline">AI Suggest</span>
             </Button>
-            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0">
+            <Button variant="ghost" onClick={() => navigate("/")} className="shrink-0 sm:hidden">
               <ArrowLeft className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Back to Dashboard</span>
               <span className="sm:hidden">Back</span>
