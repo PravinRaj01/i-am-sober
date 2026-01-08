@@ -468,13 +468,6 @@ const Settings = () => {
             <CardDescription>Manage your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button onClick={handleSignOut} variant="outline" className="w-full">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-
-            <Separator />
-
             {/* Reset Account */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -553,6 +546,13 @@ const Settings = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
+            <Separator />
+
+            <Button onClick={handleSignOut} variant="outline" className="w-full">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </CardContent>
         </Card>
       </main>
