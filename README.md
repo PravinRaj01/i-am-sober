@@ -166,21 +166,6 @@ The app uses these serverless functions:
 - `chat_messages` / `conversations`: AI chat history
 - `coping_activities`: User coping strategy usage
 
-## Security
-
-### Implemented Security Measures
-- **Row Level Security (RLS)**: All user data protected by database-level policies
-- **Authentication Required**: Supabase Auth required for all operations
-- **Server-side Processing**: AI operations run in Edge Functions
-- **Secure Key Storage**: API keys stored in Supabase secrets
-- **Input Validation**: Zod schemas for all form inputs
-
-### Security Protections
-- SQL Injection: Prevented by Supabase parameterized queries
-- XSS: Mitigated by React's automatic output escaping
-- CSRF: Handled securely by Supabase Auth
-- Brute Force: Rate limiting via Supabase Auth
-
 ## Usage
 
 1. **Sign Up/Login**: Create an account or log in with existing credentials
