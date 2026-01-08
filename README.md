@@ -1,191 +1,195 @@
-# I AM Sober
+# I AM Sober Path
 
-Light Vite + React TypeScript app for tracking sobriety progress, goals and community support.
+A comprehensive sobriety tracking and recovery support application built with React, TypeScript, and Supabase. The app helps individuals on their recovery journey by providing tools for daily tracking, goal setting, journaling, community support, and AI-powered insights.
 
-This README focuses on what a developer (or an AI coding agent) needs to be productive.
+## 🌟 Features
 
-Quick start
+### Core Functionality
+- **Sobriety Counter** - Real-time tracking of sober days, hours, and minutes
+- **Daily Check-ins** - Log mood, urge intensity, and notes
+- **Goal Setting** - Create and track recovery goals with AI suggestions
+- **Journal** - Private journaling with AI sentiment analysis
+- **Progress Visualization** - Charts and statistics to visualize achievements
+- **Achievements & XP** - Gamified progress with levels and badges
 
-Prerequisites:
+### Community Features
+- **Community Milestones** - Share achievements (anonymously or publicly)
+- **Reactions & Comments** - Support others in their journey
+- **Online Member Count** - See active community members
 
-- Node.js (recommended 16+)
-- npm (or compatible client)
+### AI-Powered Features
+- **Recovery Chatbot** - 24/7 AI companion for support
+- **Mood Pattern Detection** - Identify emotional trends
+- **Trigger Detection** - AI analyzes journal entries for potential triggers
+- **Personalized Coping Strategies** - Tailored recommendations
+- **Guided Meditations** - AI-generated meditation scripts
 
-Install and run locally (dev server runs on port 8080):
+### Settings & Privacy
+- **Privacy Controls** - Control what's shared publicly
+- **Custom Backgrounds** - Personalize your dashboard
+- **Reset & Delete Account** - Full control over your data
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- npm or bun
+
+### Local Development
 
 ```bash
-git clone https://github.com/PravinRaj01/iams-sober-path.git
+# Clone the repository
+git clone https://github.com/yourusername/iams-sober-path.git
 cd iams-sober-path
+
+# Install dependencies
 npm install
+
+# Start development server (runs on port 8080)
 npm run dev
 ```
 
 Open http://localhost:8080 in your browser.
 
-Available scripts (from `package.json`):
+### Available Scripts
 
-- `npm run dev` — start Vite dev server (port 8080; alias `@` -> `./src`).
-- `npm run build` — production build.
-- `npm run build:dev` — build with development mode.
-- `npm run preview` — preview production build.
-- `npm run lint` — run ESLint.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server on port 8080 |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
 
-Architecture & important files
+## 🏗️ Tech Stack
 
-- Vite + React (TSX) with `@vitejs/plugin-react-swc` — config in `vite.config.ts`.
-- Tailwind CSS is used for styling — see `tailwind.config.ts` and `src/index.css`.
-- App entry: `src/main.tsx` (wraps `App` with `BackgroundProvider`).
-- Global providers and routing: `src/App.tsx` (creates `QueryClient`, `TooltipProvider`, `BrowserRouter`).
-- UI primitives built on Radix are in `src/components/ui/` — prefer reusing these components.
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **State Management**: TanStack React Query
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions, Storage)
+- **AI**: Lovable AI Gateway (Gemini)
+- **Charts**: Recharts, Chart.js
+- **Routing**: React Router v6
 
-Supabase integration
-
-- Client: `src/integrations/supabase/client.ts` — contains SUPABASE_URL and publishable key (present in the repo).
-- Storage example: `src/components/AppSidebar.tsx` uses `supabase.storage.from('logos').getPublicUrl('logo.png')` and falls back to `list()`.
-- Edge functions: located at `supabase/functions/*`. Many functions require JWT verification — check `supabase/config.toml` and the individual function headers (e.g. `verify_jwt = true`).
-
-Routing and pages
-
-- `src/App.tsx` defines routes and contains a nested routing pattern: top-level routes for `/auth` and `/onboarding`, and a `/*` route that wraps the sidebar and inner routes (Dashboard, Journal, Goals, Coping, Progress, Achievements, Community, Settings).
-- Pages live in `src/pages/` (e.g. `Journal.tsx`, `Dashboard.tsx`, `Community.tsx`).
-
-Conventions and examples
-
-- Use the `@` path alias when importing from `src` (configured in `vite.config.ts`). Example:
-
-  import { supabase } from "@/integrations/supabase/client";
-
-- Sidebar behavior: `src/components/AppSidebar.tsx` uses `useSidebar()` (from `src/components/ui/sidebar`) and supports a `collapsed` desktop state and separate `openMobile` state — use the same context pattern for new layout pieces.
-
-- React Query: a single `QueryClient` is created in `src/App.tsx`. Hooks and pages use `useQuery`/`useMutation` patterns — follow existing examples in `src/pages/Community.tsx` and `src/pages/Progress.tsx`.
-
-- Rate limiting / errors: many Supabase functions and client pages implement rate checks and return JSON { error: string } responses. Mirror that shape in UI error handling.
-
-Testing & linting
-
-- There are no unit tests at present. Validate changes by running the dev server and exercising flows in the browser.
-- Run `npm run lint` to catch linter issues. Fix shared UI primitives carefully.
-
-License
-
-This repository contains an MIT `LICENSE` file and `package.json` declares `"license": "MIT"`.
-
-Where to look for help
-
-- For auth or Supabase key changes, contact the maintainer — changing keys or `verify_jwt` flags impacts production behavior.
-- For UI patterns, inspect `src/components/ui/*` and `src/components/AppSidebar.tsx`.
-
-If you'd like, I can also:
-
-- add a `CONTRIBUTING.md` with branch/commit conventions,
-- scaffold a small test harness (Jest + React Testing Library) with 2-3 starter tests,
-- or open a PR that wires a `.env.example` and documents required Supabase env variables.
-
----
-
-Stay strong — every day counts.
-# I AM Sober
-
-I am Sober Path is a comprehensive application designed to support individuals on their sobriety journey. The platform offers a suite of features to help users track progress, set and achieve goals, and access motivational resources, all within a secure and user-friendly environment.
-
-## Table of Contents
-
-- [Features](#features)
-- [Demo](#demo)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Technologies Used](#technologies-used)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Features
-
-- **User Authentication:** Secure sign-up, login, and profile management.
-- **Daily Sobriety Tracking:** Log daily progress and milestones.
-- **Goal Setting:** Create, edit, and track personal sobriety goals.
-- **Progress Visualization:** Interactive charts and statistics to visualize achievements.
-- **Motivational Quotes & Resources:** Curated content to inspire and support users.
-- **Responsive Design:** Optimized for both desktop and mobile devices.
-- **Data Privacy:** User data is handled securely and confidentially.
-
-## Demo
-
-A live demo (if available) can be accessed at: [Demo Link](https://your-demo-link.com)
-
-## Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v14 or higher)
-- npm or yarn
-
-### Installation
-
-Clone the repository and install dependencies:
-
-```bash
-git clone https://github.com/yourusername/iams-sober-path.git
-cd iams-sober-path
-npm install
-```
-
-### Running the Application
-
-Start the development server:
-
-```bash
-npm start
-```
-
-The app will be available at [http://localhost:3000](http://localhost:3000).
-
-### Building for Production
-
-To create a production build:
-
-```bash
-npm run build
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
-iams-sober-path/
-├── public/
-├── src/
-│   ├── components/      # Reusable UI components
-│   ├── pages/           # Application pages (Home, Dashboard, etc.)
-│   ├── utils/           # Utility functions and helpers
-│   ├── App.js           # Main application component
-│   └── index.js         # Entry point
-├── package.json
-└── README.md
+src/
+├── components/          # Reusable UI components
+│   ├── ui/             # shadcn/ui primitives
+│   ├── chatbot/        # AI chatbot components
+│   ├── community/      # Community features
+│   ├── coping/         # Coping tools
+│   ├── goals/          # Goal management
+│   ├── journal/        # Journal features
+│   └── progress/       # Progress charts
+├── contexts/           # React contexts
+├── hooks/              # Custom hooks
+├── pages/              # Route pages
+├── utils/              # Utility functions
+└── integrations/       # Supabase client
+
+supabase/
+├── functions/          # Edge functions (AI endpoints)
+└── migrations/         # Database migrations
 ```
 
-## Technologies Used
+## 🚀 Deploying to Vercel
 
-- **React** for building the user interface
-- **React Router** for navigation
-- **Context API** or **Redux** for state management
-- **Chart.js** or similar for data visualization
-- **CSS Modules** or **Styled Components** for styling
+### Step 1: Prepare Your Repository
+Push your code to GitHub, GitLab, or Bitbucket.
 
-## Contributing
+### Step 2: Import Project in Vercel
+1. Go to [vercel.com](https://vercel.com) and sign in
+2. Click "Add New Project"
+3. Import your repository
 
-Contributions are welcome! To contribute:
+### Step 3: Configure Build Settings
+Vercel auto-detects Vite. Verify these settings:
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -am 'Add new feature'`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a pull request.
+| Setting | Value |
+|---------|-------|
+| Framework Preset | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Install Command | `npm install` |
 
-Please open issues for suggestions or bug reports.
+### Step 4: Environment Variables
+**No environment variables are required for Vercel deployment.** 
 
-## License
+The Supabase URL and anon key are already configured in the codebase (`src/integrations/supabase/client.ts`). All sensitive keys (AI API keys, service role keys) are stored securely in Supabase Edge Function secrets and never exposed to the frontend.
+
+### Step 5: Deploy
+Click "Deploy" and Vercel will build and deploy your app.
+
+### Step 6: Configure Custom Domain (Optional)
+In your Vercel project settings, add your custom domain under "Domains".
+
+### Automatic Deployments
+Vercel automatically deploys on every push to your main branch.
+
+## 🔒 Security
+
+### Current Security Status
+The application implements several security measures:
+
+✅ **Row Level Security (RLS)** - All user data protected by RLS policies  
+✅ **Authentication Required** - Supabase Auth for all user operations  
+✅ **Edge Functions** - Sensitive operations (AI calls) run server-side  
+✅ **No Exposed Secrets** - API keys stored in Supabase secrets  
+✅ **Input Validation** - Zod schemas for form validation  
+
+### Recommendations
+- Enable **Leaked Password Protection** in Supabase Auth settings
+- Review community table RLS policies to require authentication for reads
+- Consider rate limiting on AI edge functions
+
+### What's Protected
+- ✅ SQL Injection - Supabase SDK uses parameterized queries
+- ✅ XSS - React escapes output by default
+- ✅ CSRF - Supabase Auth handles tokens securely
+- ✅ Brute Force - Supabase Auth includes rate limiting
+
+## 🔧 Supabase Configuration
+
+### Edge Functions
+The app uses these edge functions (deployed automatically):
+
+| Function | Purpose |
+|----------|---------|
+| `chat-with-ai` | AI chatbot conversations |
+| `analyze-journal-sentiment` | Sentiment analysis |
+| `detect-triggers` | Trigger detection |
+| `detect-mood-patterns` | Mood pattern analysis |
+| `suggest-coping-strategies` | Personalized coping tips |
+| `suggest-recovery-goals` | AI goal suggestions |
+| `generate-meditation` | Guided meditation scripts |
+| `generate-motivation` | Motivational messages |
+| `moderate-content` | Community content moderation |
+
+### Database Tables
+- `profiles` - User profiles and settings
+- `check_ins` - Daily check-in logs
+- `journal_entries` - Private journal entries
+- `goals` / `goal_completions` - Goal tracking
+- `achievements` / `user_achievements` - Gamification
+- `community_interactions` - Community posts
+- `chat_messages` / `conversations` - AI chat history
+- `coping_activities` - Coping strategy usage
+
+## 📄 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
 ---
 
-*Stay strong. Every day counts!*
+*Stay strong. Every day counts.* 💪
