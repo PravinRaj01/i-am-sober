@@ -651,18 +651,9 @@ export type Database = {
       }
     }
     Functions: {
-      cleanup_online_members: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      count_online_members: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      update_online_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_online_members: { Args: never; Returns: undefined }
+      count_online_members: { Args: never; Returns: number }
+      update_online_status: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

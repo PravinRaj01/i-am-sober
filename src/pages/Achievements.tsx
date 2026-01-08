@@ -33,8 +33,21 @@ const Achievements = () => {
   // Calculate XP needed for next level
   const currentXP = profile?.xp || 0;
   const currentLevel = profile?.level || 1;
-  const xpForNextLevel = (currentLevel + 1) * 100; // Simple formula: next level requires level*100 XP
-  const xpProgress = Math.min((currentXP / xpForNextLevel) * 100, 100);
+  
+  // Calculate XP thresholds for current and next level
+  const getXPForLevel = (level: number): number => {
+    let total = 0;
+    for (let n = 2; n <= level; n++) {
+      total += n * 100;
+    }
+    return total;
+  };
+  
+  const xpForCurrentLevel = getXPForLevel(currentLevel);
+  const xpForNextLevel = getXPForLevel(currentLevel + 1);
+  const xpNeededForNextLevel = (currentLevel + 1) * 100; // XP required to reach next level
+  const xpInCurrentLevel = currentXP - xpForCurrentLevel; // XP earned in current level
+  const xpProgress = Math.min((xpInCurrentLevel / xpNeededForNextLevel) * 100, 100);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -62,7 +75,7 @@ const Achievements = () => {
           <div className="flex items-end gap-2 mb-2">
             <h1 className="text-4xl font-bold">Level {currentLevel}</h1>
             <p className="text-muted-foreground mb-1">
-              {currentXP} / {xpForNextLevel} XP
+              {xpInCurrentLevel} / {xpNeededForNextLevel} XP
             </p>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
