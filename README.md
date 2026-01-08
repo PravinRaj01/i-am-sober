@@ -2,6 +2,10 @@
 
 A comprehensive sobriety tracking and recovery support application built with React, TypeScript, and Supabase. The app helps individuals on their recovery journey by providing tools for daily tracking, goal setting, journaling, community support, and AI-powered insights.
 
+## 🌟 Our Mission
+
+I AM Sober is dedicated to supporting individuals in their recovery journey. We believe that every day of sobriety is a victory worth celebrating. Our app combines personal tracking tools with community support and AI-powered insights to help users build healthier habits, identify triggers, and stay motivated on their path to recovery.
+
 ## 🌟 Features
 
 ### Core Functionality
@@ -66,7 +70,7 @@ Open http://localhost:8080 in your browser.
 - **Styling**: Tailwind CSS, shadcn/ui components
 - **State Management**: TanStack React Query
 - **Backend**: Supabase (PostgreSQL, Auth, Edge Functions, Storage)
-- **AI**: Lovable AI Gateway (Gemini)
+- **AI**: Integrated AI features using Gemini via Supabase Edge Functions
 - **Charts**: Recharts, Chart.js
 - **Routing**: React Router v6
 
