@@ -1,42 +1,38 @@
-# I AM Sober Path
+# I AM Sober
 
-A comprehensive sobriety tracking and recovery support application built with React, TypeScript, and Supabase. The app helps individuals on their recovery journey by providing tools for daily tracking, goal setting, journaling, community support, and AI-powered insights.
+A sobriety tracking and recovery support application built with React, TypeScript, and Supabase. The app provides tools for daily tracking, goal setting, journaling, community support, and AI-powered insights to help users on their recovery journey.
 
-## 🌟 Our Mission
-
-I AM Sober is dedicated to supporting individuals in their recovery journey. We believe that every day of sobriety is a victory worth celebrating. Our app combines personal tracking tools with community support and AI-powered insights to help users build healthier habits, identify triggers, and stay motivated on their path to recovery.
-
-## 🌟 Features
+## Features
 
 ### Core Functionality
-- **Sobriety Counter** - Real-time tracking of sober days, hours, and minutes
-- **Daily Check-ins** - Log mood, urge intensity, and notes
-- **Goal Setting** - Create and track recovery goals with AI suggestions
-- **Journal** - Private journaling with AI sentiment analysis
-- **Progress Visualization** - Charts and statistics to visualize achievements
-- **Achievements & XP** - Gamified progress with levels and badges
+- Sobriety Counter: Real-time tracking of sober days, hours, and minutes
+- Daily Check-ins: Log mood, urge intensity, and notes
+- Goal Setting: Create and track recovery goals with AI suggestions
+- Journal: Private journaling with AI sentiment analysis
+- Progress Visualization: Charts and statistics to visualize achievements
+- Achievements & XP: Gamified progress with levels and badges
 
 ### Community Features
-- **Community Milestones** - Share achievements (anonymously or publicly)
-- **Reactions & Comments** - Support others in their journey
-- **Online Member Count** - See active community members
+- Community Milestones: Share achievements (anonymously or publicly)
+- Reactions & Comments: Support others in their journey
+- Online Member Count: See active community members
 
 ### AI-Powered Features
-- **Recovery Chatbot** - 24/7 AI companion for support
-- **Mood Pattern Detection** - Identify emotional trends
-- **Trigger Detection** - AI analyzes journal entries for potential triggers
-- **Personalized Coping Strategies** - Tailored recommendations
-- **Guided Meditations** - AI-generated meditation scripts
+- Recovery Chatbot: 24/7 AI companion for support
+- Mood Pattern Detection: Identify emotional trends
+- Trigger Detection: AI analyzes journal entries for potential triggers
+- Personalized Coping Strategies: Tailored recommendations
+- Guided Meditations: AI-generated meditation scripts
 
 ### Settings & Privacy
-- **Privacy Controls** - Control what's shared publicly
-- **Custom Backgrounds** - Personalize your dashboard
-- **Reset & Delete Account** - Full control over your data
+- Privacy Controls: Control what's shared publicly
+- Custom Backgrounds: Personalize your dashboard
+- Reset & Delete Account: Full control over your data
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm or bun
 
 ### Local Development
@@ -64,17 +60,17 @@ Open http://localhost:8080 in your browser.
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
 
-## 🏗️ Tech Stack
+## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **State Management**: TanStack React Query
-- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions, Storage)
-- **AI**: Integrated AI features using Gemini via Supabase Edge Functions
-- **Charts**: Recharts, Chart.js
-- **Routing**: React Router v6
+- Frontend: React 18, TypeScript, Vite
+- Styling: Tailwind CSS, shadcn/ui components
+- State Management: TanStack React Query
+- Backend: Supabase (PostgreSQL, Auth, Edge Functions, Storage)
+- AI: Integrated AI features using Gemini via Supabase Edge Functions
+- Charts: Recharts, Chart.js
+- Routing: React Router v6
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -97,7 +93,7 @@ supabase/
 └── migrations/         # Database migrations
 ```
 
-## 🚀 Deploying to Vercel
+## Deploying to Vercel
 
 ### Step 1: Prepare Your Repository
 Push your code to GitHub, GitLab, or Bitbucket.
@@ -118,7 +114,7 @@ Vercel auto-detects Vite. Verify these settings:
 | Install Command | `npm install` |
 
 ### Step 4: Environment Variables
-**No environment variables are required for Vercel deployment.** 
+No environment variables are required for Vercel deployment.
 
 The Supabase URL and anon key are already configured in the codebase (`src/integrations/supabase/client.ts`). All sensitive keys (AI API keys, service role keys) are stored securely in Supabase Edge Function secrets and never exposed to the frontend.
 
@@ -131,29 +127,29 @@ In your Vercel project settings, add your custom domain under "Domains".
 ### Automatic Deployments
 Vercel automatically deploys on every push to your main branch.
 
-## 🔒 Security
+## Security
 
 ### Current Security Status
 The application implements several security measures:
 
-✅ **Row Level Security (RLS)** - All user data protected by RLS policies  
-✅ **Authentication Required** - Supabase Auth for all user operations  
-✅ **Edge Functions** - Sensitive operations (AI calls) run server-side  
-✅ **No Exposed Secrets** - API keys stored in Supabase secrets  
-✅ **Input Validation** - Zod schemas for form validation  
+- Row Level Security (RLS): All user data protected by RLS policies
+- Authentication Required: Supabase Auth for all user operations
+- Edge Functions: Sensitive operations (AI calls) run server-side
+- No Exposed Secrets: API keys stored in Supabase secrets
+- Input Validation: Zod schemas for form validation
 
 ### Recommendations
-- Enable **Leaked Password Protection** in Supabase Auth settings
+- Enable Leaked Password Protection in Supabase Auth settings
 - Review community table RLS policies to require authentication for reads
 - Consider rate limiting on AI edge functions
 
 ### What's Protected
-- ✅ SQL Injection - Supabase SDK uses parameterized queries
-- ✅ XSS - React escapes output by default
-- ✅ CSRF - Supabase Auth handles tokens securely
-- ✅ Brute Force - Supabase Auth includes rate limiting
+- SQL Injection: Supabase SDK uses parameterized queries
+- XSS: React escapes output by default
+- CSRF: Supabase Auth handles tokens securely
+- Brute Force: Supabase Auth includes rate limiting
 
-## 🔧 Supabase Configuration
+## Supabase Configuration
 
 ### Edge Functions
 The app uses these edge functions (deployed automatically):
@@ -171,20 +167,20 @@ The app uses these edge functions (deployed automatically):
 | `moderate-content` | Community content moderation |
 
 ### Database Tables
-- `profiles` - User profiles and settings
-- `check_ins` - Daily check-in logs
-- `journal_entries` - Private journal entries
-- `goals` / `goal_completions` - Goal tracking
-- `achievements` / `user_achievements` - Gamification
-- `community_interactions` - Community posts
-- `chat_messages` / `conversations` - AI chat history
-- `coping_activities` - Coping strategy usage
+- `profiles`: User profiles and settings
+- `check_ins`: Daily check-in logs
+- `journal_entries`: Private journal entries
+- `goals` / `goal_completions`: Goal tracking
+- `achievements` / `user_achievements`: Gamification
+- `community_interactions`: Community posts
+- `chat_messages` / `conversations`: AI chat history
+- `coping_activities`: Coping strategy usage
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please:
 
@@ -196,4 +192,4 @@ Contributions are welcome! Please:
 
 ---
 
-*Stay strong. Every day counts.* 💪
+Stay strong. Every day counts.
