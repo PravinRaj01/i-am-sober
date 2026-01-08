@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,18 +9,30 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Bell, User, Shield, LogOut, Sparkles, Info } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Bell, User, Shield, LogOut, Sparkles, Info, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useBackground } from "@/contexts/BackgroundContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setBackgroundImage: setGlobalBackground } = useBackground();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [pseudonym, setPseudonym] = useState("");
   const [addictionType, setAddictionType] = useState<string>("");
   
@@ -118,6 +130,104 @@ const Settings = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const handleResetAccount = async () => {
+    setResetLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Reset all user data but keep the account
+      await Promise.all([
+        // Reset profile to defaults
+        supabase.from("profiles").update({
+          current_streak: 0,
+          longest_streak: 0,
+          xp: 0,
+          level: 1,
+          points: 0,
+          sobriety_start_date: new Date().toISOString().split('T')[0],
+          last_check_in: null,
+        }).eq("id", user.id),
+        
+        // Delete all user data
+        supabase.from("check_ins").delete().eq("user_id", user.id),
+        supabase.from("journal_entries").delete().eq("user_id", user.id),
+        supabase.from("goals").delete().eq("user_id", user.id),
+        supabase.from("user_achievements").delete().eq("user_id", user.id),
+        supabase.from("coping_activities").delete().eq("user_id", user.id),
+        supabase.from("relapses").delete().eq("user_id", user.id),
+        supabase.from("triggers").delete().eq("user_id", user.id),
+        supabase.from("motivations").delete().eq("user_id", user.id),
+        supabase.from("reflections").delete().eq("user_id", user.id),
+        supabase.from("community_interactions").delete().eq("user_id", user.id),
+        supabase.from("chat_messages").delete().eq("user_id", user.id),
+        supabase.from("conversations").delete().eq("user_id", user.id),
+      ]);
+
+      // Invalidate all queries
+      queryClient.invalidateQueries();
+
+      toast({
+        title: "Account Reset",
+        description: "Your account has been reset. Starting fresh!",
+      });
+      
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Delete all user data first
+      await Promise.all([
+        supabase.from("check_ins").delete().eq("user_id", user.id),
+        supabase.from("journal_entries").delete().eq("user_id", user.id),
+        supabase.from("goals").delete().eq("user_id", user.id),
+        supabase.from("user_achievements").delete().eq("user_id", user.id),
+        supabase.from("coping_activities").delete().eq("user_id", user.id),
+        supabase.from("relapses").delete().eq("user_id", user.id),
+        supabase.from("triggers").delete().eq("user_id", user.id),
+        supabase.from("motivations").delete().eq("user_id", user.id),
+        supabase.from("reflections").delete().eq("user_id", user.id),
+        supabase.from("supporters").delete().eq("user_id", user.id),
+        supabase.from("community_interactions").delete().eq("user_id", user.id),
+        supabase.from("chat_messages").delete().eq("user_id", user.id),
+        supabase.from("conversations").delete().eq("user_id", user.id),
+        supabase.from("profiles").delete().eq("id", user.id),
+      ]);
+
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      
+      toast({
+        title: "Account Deleted",
+        description: "Your account and all data have been permanently deleted.",
+      });
+      
+      navigate("/auth");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const requestNotificationPermission = async () => {
@@ -357,11 +467,92 @@ const Settings = () => {
             <CardTitle>Account</CardTitle>
             <CardDescription>Manage your account</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button onClick={handleSignOut} variant="outline" className="w-full">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
+
+            <Separator />
+
+            {/* Reset Account */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full text-amber-600 border-amber-600/50 hover:bg-amber-600/10">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reset Account (Start Fresh)
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    Reset Your Account?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will reset all your progress including:
+                    <ul className="list-disc list-inside mt-2 space-y-1 text-left">
+                      <li>Your sobriety streak</li>
+                      <li>All check-ins and journal entries</li>
+                      <li>Goals and achievements</li>
+                      <li>XP and level progress</li>
+                      <li>Community posts</li>
+                    </ul>
+                    <p className="mt-3 font-medium">Your account will remain active but start from scratch.</p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleResetAccount} 
+                    disabled={resetLoading}
+                    className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700"
+                  >
+                    {resetLoading ? "Resetting..." : "Yes, Reset Everything"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete Account */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full text-destructive border-destructive/50 hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account Permanently
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                    <Trash2 className="h-5 w-5" />
+                    Delete Your Account?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    <span className="font-bold text-destructive">This action cannot be undone.</span>
+                    <br /><br />
+                    This will permanently delete:
+                    <ul className="list-disc list-inside mt-2 space-y-1 text-left">
+                      <li>Your account and profile</li>
+                      <li>All recovery data and history</li>
+                      <li>Journal entries and check-ins</li>
+                      <li>Goals, achievements, and progress</li>
+                      <li>Community posts and interactions</li>
+                    </ul>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAccount} 
+                    disabled={deleteLoading}
+                    className="w-full sm:w-auto bg-destructive hover:bg-destructive/90"
+                  >
+                    {deleteLoading ? "Deleting..." : "Yes, Delete Forever"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </main>
