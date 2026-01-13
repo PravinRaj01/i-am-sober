@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RecentCommunityCard from "@/components/community/RecentCommunityCard";
 import LevelUpDialog from "@/components/LevelUpDialog";
 import { useLevelUp } from "@/hooks/useLevelUp";
+import ProactiveIntervention from "@/components/ProactiveIntervention";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -263,6 +264,9 @@ const Dashboard = () => {
         oldLevel={oldLevel}
         newLevel={newLevel}
       />
+      
+      {/* Proactive AI Intervention */}
+      <ProactiveIntervention onOpenChat={() => setChatbotState('full')} />
     </div>
   );
 };
