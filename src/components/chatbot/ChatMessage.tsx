@@ -2,25 +2,36 @@ import { Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import ChatToolIndicator from "./ChatToolIndicator";
 
 interface ChatMessageProps {
   role: string;
   content: string;
   isStreaming?: boolean;
   compact?: boolean;
+  toolsUsed?: string[];
+  isThinking?: boolean;
 }
 
-const ChatMessage = ({ role, content, isStreaming, compact = false }: ChatMessageProps) => {
+const ChatMessage = ({ role, content, isStreaming, compact = false, toolsUsed, isThinking }: ChatMessageProps) => {
   const isUser = role === "user";
 
   return (
-    <div
-      className={cn(
-        "flex gap-2 animate-fade-in",
-        isUser ? "flex-row-reverse" : "flex-row",
-        compact && "gap-1.5"
+    <div className={cn("space-y-1.5 animate-fade-in", compact && "space-y-1")}>
+      {/* Tool indicator for AI messages */}
+      {!isUser && (toolsUsed?.length || isThinking) && (
+        <div className={cn("ml-10", compact && "ml-8")}>
+          <ChatToolIndicator toolsUsed={toolsUsed} isThinking={isThinking} compact={compact} />
+        </div>
       )}
-    >
+      
+      <div
+        className={cn(
+          "flex gap-2",
+          isUser ? "flex-row-reverse" : "flex-row",
+          compact && "gap-1.5"
+        )}
+      >
       {!isUser && (
         <Avatar className={cn("shrink-0 border border-primary/20", compact ? "h-6 w-6" : "h-8 w-8")}>
           <AvatarFallback className="bg-gradient-primary text-primary-foreground">
@@ -67,6 +78,7 @@ const ChatMessage = ({ role, content, isStreaming, compact = false }: ChatMessag
             <span className={cn("bg-current rounded-full animate-bounce", compact ? "w-1 h-1" : "w-1.5 h-1.5")} />
           </span>
         )}
+        </div>
       </div>
     </div>
   );
