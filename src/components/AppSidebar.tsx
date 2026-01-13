@@ -1,4 +1,4 @@
-import { Home, Heart, BookOpen, Target, Activity, TrendingUp, Settings, Trophy, Users, X, Watch, Brain } from "lucide-react";
+import { Home, Heart, BookOpen, Target, Activity, TrendingUp, Settings, Trophy, Users, X, Watch, Brain, Sparkles } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,8 @@ const menuItems = [
   { title: "Progress", url: "/progress", icon: TrendingUp },
   { title: "Achievements", url: "/achievements", icon: Trophy },
   { title: "Wearables", url: "/wearables", icon: Watch },
-  { title: "AI Insights", url: "/ai-observability", icon: Brain },
+  { title: "Recovery Insights", url: "/ai-recovery-insights", icon: Sparkles },
+  { title: "AI Developer", url: "/ai-observability", icon: Brain },
   { title: "Community", url: "/community", icon: Users },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

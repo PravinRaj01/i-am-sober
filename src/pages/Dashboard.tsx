@@ -18,7 +18,7 @@ import { Calendar, Target, Heart, TrendingUp } from "lucide-react";
 import { useBackground } from "@/contexts/BackgroundContext";
 import ChatbotButton from "@/components/chatbot/ChatbotButton";
 import ChatbotDrawer, { ChatbotState } from "@/components/chatbot/ChatbotDrawer";
-import AITokenAlert from "@/components/AITokenAlert";
+
 import StorageImage from "@/components/StorageImage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RecentCommunityCard from "@/components/community/RecentCommunityCard";
@@ -254,8 +254,6 @@ const Dashboard = () => {
       />
       <ChatbotDrawer state={chatbotState} onStateChange={setChatbotState} />
       
-      {/* AI Token Alert */}
-      <AITokenAlert />
       
       {/* Level Up Dialog */}
       <LevelUpDialog
