@@ -18,6 +18,7 @@ import Community from "./pages/Community";
 import WearableData from "./pages/WearableData";
 import AIObservability from "./pages/AIObservability";
 import AIRecoveryInsights from "./pages/AIRecoveryInsights";
+import Install from "./pages/Install";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<OnboardingWizard />} />
+        <Route path="/install" element={<Install />} />
         <Route path="/*" element={
           <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background relative">
