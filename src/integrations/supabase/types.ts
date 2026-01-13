@@ -47,6 +47,150 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_interventions: {
+        Row: {
+          acknowledged_at: string | null
+          action_taken: string | null
+          created_at: string
+          id: string
+          message: string
+          risk_score: number | null
+          suggested_actions: Json | null
+          trigger_type: string
+          user_id: string
+          was_acknowledged: boolean | null
+          was_helpful: boolean | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          action_taken?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          risk_score?: number | null
+          suggested_actions?: Json | null
+          trigger_type: string
+          user_id: string
+          was_acknowledged?: boolean | null
+          was_helpful?: boolean | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          action_taken?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          risk_score?: number | null
+          suggested_actions?: Json | null
+          trigger_type?: string
+          user_id?: string
+          was_acknowledged?: boolean | null
+          was_helpful?: boolean | null
+        }
+        Relationships: []
+      }
+      ai_observability_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          input_summary: string | null
+          input_tokens: number | null
+          intervention_triggered: boolean | null
+          intervention_type: string | null
+          model_used: string | null
+          output_tokens: number | null
+          response_summary: string | null
+          response_time_ms: number | null
+          tool_results: Json | null
+          tools_called: Json | null
+          user_feedback: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          input_summary?: string | null
+          input_tokens?: number | null
+          intervention_triggered?: boolean | null
+          intervention_type?: string | null
+          model_used?: string | null
+          output_tokens?: number | null
+          response_summary?: string | null
+          response_time_ms?: number | null
+          tool_results?: Json | null
+          tools_called?: Json | null
+          user_feedback?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          input_summary?: string | null
+          input_tokens?: number | null
+          intervention_triggered?: boolean | null
+          intervention_type?: string | null
+          model_used?: string | null
+          output_tokens?: number | null
+          response_summary?: string | null
+          response_time_ms?: number | null
+          tool_results?: Json | null
+          tools_called?: Json | null
+          user_feedback?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      biometric_logs: {
+        Row: {
+          blood_oxygen: number | null
+          created_at: string
+          heart_rate: number | null
+          hrv: number | null
+          id: string
+          logged_at: string | null
+          notes: string | null
+          sleep_hours: number | null
+          source: string | null
+          steps: number | null
+          stress_level: number | null
+          user_id: string
+        }
+        Insert: {
+          blood_oxygen?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          hrv?: number | null
+          id?: string
+          logged_at?: string | null
+          notes?: string | null
+          sleep_hours?: number | null
+          source?: string | null
+          steps?: number | null
+          stress_level?: number | null
+          user_id: string
+        }
+        Update: {
+          blood_oxygen?: number | null
+          created_at?: string
+          heart_rate?: number | null
+          hrv?: number | null
+          id?: string
+          logged_at?: string | null
+          notes?: string | null
+          sleep_hours?: number | null
+          source?: string | null
+          steps?: number | null
+          stress_level?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string

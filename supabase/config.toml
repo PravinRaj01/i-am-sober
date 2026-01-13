@@ -78,3 +78,12 @@ verify_jwt = true
 
 [functions.check-ownership]
 verify_jwt = true
+
+[functions.moderate-content]
+verify_jwt = true
+
+[functions.proactive-check]
+verify_jwt = true
+
+[functions.analyze-biometrics]
+verify_jwt = true

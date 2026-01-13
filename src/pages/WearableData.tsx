@@ -1,0 +1,297 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Heart, Moon, Footprints, Brain, Activity, Watch, TrendingUp, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+export default function WearableData() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState({
+    heart_rate: "",
+    sleep_hours: "",
+    steps: "",
+    stress_level: [5],
+    hrv: "",
+    blood_oxygen: "",
+    notes: "",
+  });
+
+  const [analysis, setAnalysis] = useState<any>(null);
+
+  const { data: recentLogs } = useQuery({
+    queryKey: ["biometric-logs"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("biometric_logs")
+        .select("*")
+        .order("logged_at", { ascending: false })
+        .limit(7);
+      return data || [];
+    },
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async (biometricData: any) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await fetch(
+        `https://jivpbjhroujuoatdqtpx.supabase.co/functions/v1/analyze-biometrics`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ biometricData }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to analyze biometrics");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAnalysis(data.analysis);
+      queryClient.invalidateQueries({ queryKey: ["biometric-logs"] });
+      toast({
+        title: "Data analyzed!",
+        description: "Your health metrics have been recorded and analyzed.",
+      });
+      setFormData({
+        heart_rate: "",
+        sleep_hours: "",
+        steps: "",
+        stress_level: [5],
+        hrv: "",
+        blood_oxygen: "",
+        notes: "",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save biometric data.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitMutation.mutate({
+      heart_rate: formData.heart_rate ? parseInt(formData.heart_rate) : null,
+      sleep_hours: formData.sleep_hours ? parseFloat(formData.sleep_hours) : null,
+      steps: formData.steps ? parseInt(formData.steps) : null,
+      stress_level: formData.stress_level[0],
+      hrv: formData.hrv ? parseInt(formData.hrv) : null,
+      blood_oxygen: formData.blood_oxygen ? parseFloat(formData.blood_oxygen) : null,
+      notes: formData.notes || null,
+      source: "manual",
+    });
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "high": return "bg-destructive text-destructive-foreground";
+      case "medium": return "bg-warning text-warning-foreground";
+      default: return "bg-success text-success-foreground";
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col min-h-screen">
+      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40">
+        <div className="px-4 py-4 flex items-center gap-4">
+          <SidebarTrigger className="lg:hidden" />
+          <div>
+            <h1 className="text-xl font-semibold flex items-center gap-2">
+              <Watch className="h-5 w-5 text-primary" />
+              Wearable Health Data
+            </h1>
+            <p className="text-sm text-muted-foreground">Track biometrics for AI-powered recovery insights</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Input Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Log Health Metrics
+              </CardTitle>
+              <CardDescription>
+                Enter your wearable data or manual measurements
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="heart_rate" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-red-500" /> Heart Rate (bpm)
+                    </Label>
+                    <Input
+                      id="heart_rate"
+                      type="number"
+                      placeholder="72"
+                      value={formData.heart_rate}
+                      onChange={(e) => setFormData({ ...formData, heart_rate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sleep_hours" className="flex items-center gap-2">
+                      <Moon className="h-4 w-4 text-indigo-500" /> Sleep (hours)
+                    </Label>
+                    <Input
+                      id="sleep_hours"
+                      type="number"
+                      step="0.5"
+                      placeholder="7.5"
+                      value={formData.sleep_hours}
+                      onChange={(e) => setFormData({ ...formData, sleep_hours: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="steps" className="flex items-center gap-2">
+                      <Footprints className="h-4 w-4 text-green-500" /> Steps
+                    </Label>
+                    <Input
+                      id="steps"
+                      type="number"
+                      placeholder="8000"
+                      value={formData.steps}
+                      onChange={(e) => setFormData({ ...formData, steps: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hrv" className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-500" /> HRV (ms)
+                    </Label>
+                    <Input
+                      id="hrv"
+                      type="number"
+                      placeholder="45"
+                      value={formData.hrv}
+                      onChange={(e) => setFormData({ ...formData, hrv: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-purple-500" /> 
+                    Stress Level: {formData.stress_level[0]}/10
+                  </Label>
+                  <Slider
+                    value={formData.stress_level}
+                    onValueChange={(value) => setFormData({ ...formData, stress_level: value })}
+                    max={10}
+                    min={1}
+                    step={1}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={submitMutation.isPending}>
+                  {submitMutation.isPending ? "Analyzing..." : "Log & Analyze"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* AI Analysis */}
+          {analysis && (
+            <Card className="border-primary/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-primary" />
+                  AI Health Insights
+                </CardTitle>
+                <Badge className={getSeverityColor(analysis.risk_level || "low")}>
+                  Risk Level: {analysis.risk_level || "low"}
+                </Badge>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {analysis.insights?.map((insight: any, i: number) => (
+                  <div key={i} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-start gap-2">
+                      {insight.severity === "high" ? (
+                        <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+                      ) : (
+                        <Activity className="h-4 w-4 text-primary mt-0.5" />
+                      )}
+                      <div>
+                        <p className="font-medium">{insight.title}</p>
+                        <p className="text-sm text-muted-foreground">{insight.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {analysis.recommendations?.length > 0 && (
+                  <div className="pt-2">
+                    <p className="font-medium mb-2">Recommendations:</p>
+                    <ul className="text-sm space-y-1">
+                      {analysis.recommendations.map((rec: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-primary">•</span>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Logs */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Recent Health Logs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentLogs?.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No health data logged yet. Start tracking above!
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {recentLogs?.map((log: any) => (
+                    <div key={log.id} className="p-3 rounded-lg bg-muted/30 text-center">
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(log.logged_at).toLocaleDateString()}
+                      </p>
+                      {log.sleep_hours && (
+                        <p className="text-sm">😴 {log.sleep_hours}h</p>
+                      )}
+                      {log.steps && (
+                        <p className="text-sm">👟 {log.steps.toLocaleString()}</p>
+                      )}
+                      {log.stress_level && (
+                        <p className="text-sm">😰 {log.stress_level}/10</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}
