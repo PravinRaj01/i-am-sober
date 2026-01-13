@@ -15,6 +15,7 @@ import Achievements from "./pages/Achievements";
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
 import Community from "./pages/Community";
+import WearableData from "./pages/WearableData";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 
@@ -40,6 +41,7 @@ const AppContent = () => {
                   <Route path="/progress" element={<Progress />} />
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/community" element={<Community />} />
+                  <Route path="/wearables" element={<WearableData />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
