@@ -66,27 +66,26 @@ serve(async (req) => {
 
     console.log(`[analyze-journal-sentiment] User: ${user.id}, Entry: ${entryId}, Text length: ${sanitizedText.length}`);
 
-    // Get user's Gemini API key
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("[analyze-journal-sentiment] LOVABLE_API_KEY not configured");
-      throw new Error("LOVABLE_API_KEY not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      console.error("[analyze-journal-sentiment] GROQ_API_KEY not configured");
+      throw new Error("GROQ_API_KEY not configured");
     }
 
-    console.log("[analyze-journal-sentiment] Calling Lovable AI Gateway...");
+    console.log("[analyze-journal-sentiment] Calling Groq API...");
 
     const prompt = `Analyze the sentiment of this text and respond with ONLY a JSON object in this exact format: {"label": "positive" or "negative" or "neutral", "score": number between 0 and 1}. Text: "${sanitizedText}"`;
 
     const response = await fetch(
-      `https://ai.gateway.lovable.dev/v1/chat/completions`,
+      `https://api.groq.com/openai/v1/chat/completions`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "system", content: prompt }],
           max_tokens: 50,
           temperature: 0.1,
@@ -99,19 +98,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("[analyze-journal-sentiment] Lovable AI API error:", error);
+      console.error("[analyze-journal-sentiment] Groq API error:", error);
       
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits depleted. Please add credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       

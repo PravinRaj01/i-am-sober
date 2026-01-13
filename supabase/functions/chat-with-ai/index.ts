@@ -115,8 +115,6 @@ const agentTools = [
 
 // Execute tool calls
 async function executeTool(supabase: any, userId: string, toolName: string, args: any): Promise<any> {
-  const startTime = Date.now();
-  
   switch (toolName) {
     case "get_user_progress": {
       const { data: profile } = await supabase
@@ -195,7 +193,6 @@ async function executeTool(supabase: any, userId: string, toolName: string, args
     case "suggest_coping_activity": {
       const stressLevel = args.stress_level || "medium";
       
-      // Get user's past coping activities that were helpful
       const { data: pastActivities } = await supabase
         .from("coping_activities")
         .select("activity_name, category, helpful, times_used")
@@ -338,7 +335,6 @@ serve(async (req) => {
 
     const { message, conversationHistory } = await req.json();
     
-    // Sanitize user input
     const sanitizedMessage = sanitizeInput(message, 2000);
     if (!sanitizedMessage) {
       return new Response(JSON.stringify({ error: "Invalid message" }), {
@@ -347,13 +343,11 @@ serve(async (req) => {
       });
     }
     
-    // Sanitize conversation history
     const sanitizedHistory = (conversationHistory || []).map((msg: any) => ({
       role: msg.role === "user" ? "user" : "assistant",
       content: sanitizeInput(msg.content, 2000)
     })).slice(-10);
 
-    // Fetch user context for system prompt
     const { data: profile } = await supabase
       .from("profiles")
       .select("pseudonym, addiction_type, sobriety_start_date, level")
@@ -364,7 +358,6 @@ serve(async (req) => {
       ? Math.floor((Date.now() - new Date(profile.sobriety_start_date).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    // Build system prompt for AI Agent
     const systemPrompt = `You are an empathetic AI Recovery Coach for a sobriety app. You help users in their recovery journey with compassion and evidence-based support.
 
 USER CONTEXT:
@@ -395,30 +388,28 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
 - Crisis Lifeline: 988
 - Crisis Text: Text HOME to 741741`;
 
-    // Build messages array
     const messages = [
       { role: "system", content: systemPrompt },
       ...sanitizedHistory,
       { role: "user", content: sanitizedMessage }
     ];
 
-    // Call Lovable AI Gateway with tools
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Use Groq API
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY not configured");
     }
 
-    console.log("Calling Lovable AI Gateway with agent tools");
+    console.log("Calling Groq API with agent tools");
 
-    // First call - may include tool calls
-    let aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    let aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "llama-3.3-70b-versatile",
         messages,
         tools: agentTools,
         tool_choice: "auto",
@@ -432,14 +423,8 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI usage limit reached. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
+      console.error("Groq API error:", aiResponse.status, errorText);
       throw new Error("Failed to get AI response");
     }
 
@@ -472,21 +457,20 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         });
       }
       
-      // Continue conversation with tool results
       const updatedMessages = [
         ...messages,
         assistantMessage,
         ...toolResults
       ];
       
-      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "llama-3.3-70b-versatile",
           messages: updatedMessages,
           tools: agentTools,
           tool_choice: "auto",
@@ -495,7 +479,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
-        console.error("AI gateway error in tool loop:", aiResponse.status, errorText);
+        console.error("Groq API error in tool loop:", aiResponse.status, errorText);
         break;
       }
       
@@ -515,7 +499,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         tools_called: toolsCalled,
         response_summary: finalContent.substring(0, 200),
         response_time_ms: responseTimeMs,
-        model_used: "google/gemini-3-flash-preview",
+        model_used: "llama-3.3-70b-versatile",
         intervention_triggered: toolsCalled.includes("log_intervention"),
       });
     } catch (logError) {

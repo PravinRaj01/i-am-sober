@@ -80,32 +80,20 @@ serve(async (req) => {
       ? Math.floor((Date.now() - new Date(profile.sobriety_start_date).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    // Prepare analysis context
-    const analysisContext = {
-      current: biometricData,
-      historical: historicalData || [],
-      check_ins: checkIns || [],
-      user_context: {
-        name: profile?.pseudonym || "User",
-        addiction_type: profile?.addiction_type || "addiction",
-        days_sober: daysSober
-      }
-    };
-
-    // Call AI for analysis
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Call Groq AI for analysis
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY not configured");
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "llama-3.3-70b-versatile",
         messages: [
           {
             role: "system",
@@ -119,7 +107,7 @@ Keep response concise and supportive. Format as JSON with fields: insights (arra
           },
           {
             role: "user",
-            content: `Analyze this health data for ${analysisContext.user_context.name} (${analysisContext.user_context.days_sober} days in recovery from ${analysisContext.user_context.addiction_type}):
+            content: `Analyze this health data for ${profile?.pseudonym || "User"} (${daysSober} days in recovery from ${profile?.addiction_type || "addiction"}):
 
 Current biometrics:
 - Heart Rate: ${biometricData.heart_rate || "N/A"} bpm
@@ -185,7 +173,7 @@ Provide analysis and recommendations.`
       input_summary: `HR:${biometricData.heart_rate} Sleep:${biometricData.sleep_hours} Stress:${biometricData.stress_level}`,
       response_summary: JSON.stringify(analysis.insights?.slice(0, 2) || []),
       response_time_ms: Date.now() - startTime,
-      model_used: "google/gemini-3-flash-preview"
+      model_used: "llama-3.3-70b-versatile"
     });
 
     return new Response(JSON.stringify({
