@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,13 +153,64 @@ export default function WearableData() {
     });
   };
 
+  // Handle Fitbit OAuth callback
+  const fitbitCallbackMutation = useMutation({
+    mutationFn: async (code: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const callbackUrl = `${window.location.origin}/wearables`;
+
+      const response = await fetch(
+        `https://jivpbjhroujuoatdqtpx.supabase.co/functions/v1/fitbit-auth?action=callback`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ code, callbackUrl }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to complete Fitbit authorization");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-wearable"] });
+      toast({
+        title: "Fitbit Connected!",
+        description: "Your Fitbit account has been successfully linked. Click 'Sync Now' to get your latest data.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Connection Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Check for OAuth callback on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+      // Clean URL immediately
+      window.history.replaceState({}, '', '/wearables');
+      // Exchange code for token
+      fitbitCallbackMutation.mutate(code);
+    }
+  }, []);
+
   const handleConnectFitbit = async () => {
     setConnecting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // For hackathon demo, simulate OAuth flow
       const callbackUrl = `${window.location.origin}/wearables`;
 
       const response = await fetch(
@@ -178,25 +229,8 @@ export default function WearableData() {
       
       const { authUrl } = await response.json();
       
-      // For hackathon demo, simulate successful connection
-      // In production, you would redirect to authUrl
-      toast({
-        title: "Fitbit Demo Mode",
-        description: "For the hackathon, Fitbit connection is simulated. Sync will show sample data.",
-      });
-
-      // Simulate connection by updating profile
-      await supabase
-        .from("profiles")
-        .update({
-          privacy_settings: {
-            fitbit_connected: true,
-            fitbit_user_id: "demo_user",
-          },
-        })
-        .eq("id", session.user.id);
-
-      queryClient.invalidateQueries({ queryKey: ["profile-wearable"] });
+      // Redirect to Fitbit authorization page
+      window.location.href = authUrl;
 
     } catch (error: any) {
       toast({
@@ -204,7 +238,6 @@ export default function WearableData() {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setConnecting(false);
     }
   };
