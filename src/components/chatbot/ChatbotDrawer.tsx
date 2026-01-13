@@ -183,39 +183,22 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
         throw new Error(errorData.error || "Failed to get AI response");
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ") && line !== "data: [DONE]") {
-            try {
-              const json = JSON.parse(line.slice(6));
-              const content = json.choices?.[0]?.delta?.content;
-              if (content) {
-                accumulatedResponse += content;
-                setStreamingMessage((prev) => prev + content);
-              }
-            } catch (e) {
-              // Ignore parse errors
-            }
-          }
-        }
-      }
-
-      if (accumulatedResponse) {
-        await saveMessageMutation.mutateAsync({
+      // Parse JSON response (not SSE streaming)
+      const data = await response.json();
+      const aiResponse = data.response || data.choices?.[0]?.message?.content || "";
+      const toolsUsed = data.tools_used || [];
+      
+      if (aiResponse) {
+        // Save assistant message with metadata
+        await supabase.from("chat_messages").insert({
+          user_id: (await supabase.auth.getUser()).data.user?.id || "",
+          conversation_id: currentConversationId,
           role: "assistant",
-          content: accumulatedResponse,
+          content: aiResponse,
+          metadata: { tools_used: toolsUsed, response_time_ms: data.response_time_ms }
         });
+        
+        queryClient.invalidateQueries({ queryKey: ["chat-messages", currentConversationId] });
       }
     } catch (error: any) {
       toast({

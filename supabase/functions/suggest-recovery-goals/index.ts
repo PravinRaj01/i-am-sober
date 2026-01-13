@@ -63,9 +63,9 @@ serve(async (req: Request) => {
       .eq("id", user.id)
       .single();
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY not configured");
     }
 
     console.log("Fetching user context...");
@@ -117,17 +117,17 @@ Return ONLY a valid JSON array inside a JSON markdown block:
 ]
 \`\`\``;
 
-    console.log("Calling Lovable AI Gateway...");
+    console.log("Calling Groq API...");
     const aiResponse = await fetch(
-      `https://ai.gateway.lovable.dev/v1/chat/completions`,
+      `https://api.groq.com/openai/v1/chat/completions`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "llama-3.3-70b-versatile",
           messages: [
             { role: "system", content: prompt }
           ],

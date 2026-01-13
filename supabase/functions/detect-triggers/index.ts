@@ -54,9 +54,9 @@ serve(async (req) => {
       throw new Error("Invalid text input");
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    if (!GROQ_API_KEY) {
+      throw new Error("GROQ_API_KEY not configured");
     }
 
     const candidateLabels = [
@@ -73,15 +73,15 @@ serve(async (req) => {
     const prompt = `Analyze this text and classify the primary emotional trigger. Respond with ONLY a JSON object: {"trigger": "one of: ${candidateLabels.join(', ')}", "confidence": number between 0 and 1, "topLabels": ["label1", "label2", "label3"], "topScores": [0.9, 0.05, 0.03]}. Text: "${sanitizedText}"`;
 
     const response = await fetch(
-      `https://ai.gateway.lovable.dev/v1/chat/completions`,
+      `https://api.groq.com/openai/v1/chat/completions`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "system", content: prompt }],
           max_tokens: 200,
           temperature: 0.2,
@@ -91,7 +91,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("Lovable AI API error:", error);
+      console.error("Groq API error:", error);
       throw new Error("Failed to detect triggers");
     }
 
