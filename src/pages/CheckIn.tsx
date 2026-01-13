@@ -10,7 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-const moods = ["Great", "Good", "Okay", "Struggling", "Difficult"];
+const moods = [
+  { value: "Great", emoji: "😊", label: "Great", bgSelected: "bg-green-500/20", borderSelected: "border-green-500", textColor: "text-green-600" },
+  { value: "Good", emoji: "🙂", label: "Good", bgSelected: "bg-lime-500/20", borderSelected: "border-lime-500", textColor: "text-lime-600" },
+  { value: "Okay", emoji: "😐", label: "Okay", bgSelected: "bg-yellow-500/20", borderSelected: "border-yellow-500", textColor: "text-yellow-600" },
+  { value: "Struggling", emoji: "😔", label: "Struggling", bgSelected: "bg-orange-500/20", borderSelected: "border-orange-500", textColor: "text-orange-600" },
+  { value: "Difficult", emoji: "😢", label: "Difficult", bgSelected: "bg-red-500/20", borderSelected: "border-red-500", textColor: "text-red-600" },
+];
 
 const CheckIn = () => {
   const [selectedMood, setSelectedMood] = useState("Okay");
@@ -150,20 +156,34 @@ const CheckIn = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <Label>Mood</Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {moods.map((mood) => (
-                    <Button
-                      key={mood}
-                      type="button"
-                      variant={selectedMood === mood ? "default" : "outline"}
-                      className={selectedMood === mood ? "bg-gradient-primary" : ""}
-                      onClick={() => setSelectedMood(mood)}
-                    >
-                      {mood}
-                    </Button>
-                  ))}
+              <div className="space-y-4">
+                <Label className="text-base">How are you feeling?</Label>
+                <div className="flex justify-center gap-3 sm:gap-4 flex-wrap">
+                  {moods.map((mood) => {
+                    const isSelected = selectedMood === mood.value;
+                    return (
+                      <button
+                        key={mood.value}
+                        type="button"
+                        onClick={() => setSelectedMood(mood.value)}
+                        className={`
+                          flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200
+                          border-2 min-w-[70px]
+                          ${isSelected 
+                            ? `${mood.bgSelected} ${mood.borderSelected} scale-110 shadow-lg` 
+                            : 'border-border/50 hover:border-border hover:bg-muted/30'
+                          }
+                        `}
+                      >
+                        <span className={`text-3xl sm:text-4xl transition-transform ${isSelected ? 'scale-110' : 'grayscale opacity-60'}`}>
+                          {mood.emoji}
+                        </span>
+                        <span className={`text-xs font-medium ${isSelected ? mood.textColor : 'text-muted-foreground'}`}>
+                          {mood.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
