@@ -653,13 +653,27 @@ serve(async (req) => {
       ? Math.floor((Date.now() - new Date(profile.sobriety_start_date).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
-    // Check if user is giving specific actionable details
-    const hasSpecificGoalDetails = /(?:goal|track|set).*(?:for|to|called|named|:)\s*["']?[\w\s]+["']?|(?:^|\s)(?:\d+\s*(?:days?|weeks?|hours?|minutes?)|exercise|meditate|read|walk|run|swim|attend|call|journal)/i.test(sanitizedMessage);
-    const hasSpecificMoodDetails = /(?:feeling|mood|i'?m|i am)\s+(?:great|good|okay|ok|bad|terrible|struggling|crisis|sad|happy|anxious|stressed|angry)/i.test(sanitizedMessage);
-    const isExplicitActionRequest = /(?:create|set|make|add|log|record|save|track)\s+(?:a\s+)?(?:goal|check-?in|journal|entry|mood)/i.test(sanitizedMessage);
+    // Detect if user message contains specific actionable details that warrant tool use
+    // Goal creation: needs goal title/description explicitly stated
+    const hasSpecificGoalDetails = /(?:create|set|add|make)\s+(?:a\s+)?goal\s+(?:to|for|called|named)\s+["']?[\w\s]{5,}["']?/i.test(sanitizedMessage) ||
+      /goal:\s*["']?[\w\s]{5,}["']?/i.test(sanitizedMessage);
     
-    // Only enable write tools if user provides specific details or explicitly requests action
-    const enableWriteTools = hasSpecificGoalDetails || hasSpecificMoodDetails || isExplicitActionRequest;
+    // Journal entry: needs explicit create request with content
+    const hasSpecificJournalDetails = /(?:create|add|write|save)\s+(?:a\s+)?(?:journal|entry)\s+(?:about|saying|that|:)\s+.{10,}/i.test(sanitizedMessage) ||
+      /(?:journal|write down|record)\s+this:\s*.{10,}/i.test(sanitizedMessage);
+    
+    // Check-in: needs explicit mood with create request
+    const hasSpecificCheckInDetails = /(?:log|record|save|create)\s+(?:a\s+)?(?:check-?in|mood)\s+(?:as|:)\s*(?:great|good|okay|ok|bad|struggling|crisis)/i.test(sanitizedMessage) ||
+      /my (?:mood|check-?in)\s+(?:is|as)\s*(?:great|good|okay|ok|bad|struggling|crisis)/i.test(sanitizedMessage);
+    
+    // Coping activity: needs explicit log request with activity name
+    const hasSpecificCopingDetails = /(?:log|record|track)\s+(?:that\s+)?(?:i\s+)?(?:did|used|tried)\s+["']?[\w\s]{3,}["']?/i.test(sanitizedMessage);
+    
+    // Goal completion: needs explicit complete request with goal reference
+    const hasGoalCompletionRequest = /(?:complete|finish|done|mark\s+as\s+done)\s+(?:my\s+)?(?:goal|task)\s+["']?[\w\s]{3,}["']?/i.test(sanitizedMessage);
+    
+    // Only enable write tools if user provides SPECIFIC details with explicit action request
+    const enableWriteTools = hasSpecificGoalDetails || hasSpecificJournalDetails || hasSpecificCheckInDetails || hasSpecificCopingDetails || hasGoalCompletionRequest;
 
     const systemPrompt = `You are an empathetic AI Recovery Coach for a sobriety app. You help users in their recovery journey with compassion and evidence-based support.
 
@@ -669,29 +683,42 @@ USER CONTEXT:
 - Days sober: ${daysSober}
 - Level: ${profile?.level || 1}
 
-YOUR ROLE: Be a supportive companion first, action-taker second.
+YOUR ROLE: Be a supportive companion first, action-taker second. You are CONVERSATIONAL, not transactional.
 
-CONVERSATION RULES (CRITICAL - FOLLOW THESE EXACTLY):
-1. LISTEN and RESPOND to what the user actually said
-2. Have a natural conversation - ask follow-up questions
-3. DO NOT assume what the user wants - ASK them
-4. If user says "I want to create a goal" - ASK "What goal would you like to set?" 
-5. If user says "I'm feeling X" - RESPOND with empathy, don't auto-log unless asked
-6. Only use action tools when user provides SPECIFIC details AND confirms they want action
+CRITICAL CONVERSATION RULES:
+1. ALWAYS listen and respond to what the user actually said first
+2. NEVER auto-execute write actions without COMPLETE details provided by the user
+3. When user mentions wanting to do something, ASK for details:
+   - "I want to create a goal" → "That's great! What goal would you like to set? Tell me about it."
+   - "I want to journal" → "I'd love to help you journal. What's on your mind?"
+   - "I'm feeling stressed" → Respond with empathy, then ask "Would you like me to log this as a check-in?"
+   - "Log my mood" → "Sure! How are you feeling? (great/good/okay/struggling/crisis)"
 
-WHEN TO USE TOOLS:
-- READ tools: Use freely to understand user's context
-- WRITE tools: ONLY when user provides COMPLETE details like:
-  - "Create a goal to exercise 3 times a week for 2 weeks" ✓
-  - "Log my mood as good" ✓
-  - "I want to create a goal" ✗ (ask what goal first!)
-  - "I'm feeling stressed" ✗ (respond with empathy, ask if they want to log)
+4. Only use WRITE tools when you have ALL required information:
+   - create_goal: ONLY if user provided specific goal title like "create goal to exercise 3x weekly"
+   - create_journal_entry: ONLY if user provided actual journal content to save
+   - create_check_in: ONLY if user explicitly said to log AND provided mood
+   - complete_goal: ONLY if user said to mark specific goal as done
+   - log_coping_activity: ONLY if user said to log specific activity they did
+
+5. READ tools are fine to use freely to understand context
+
+EXAMPLES OF WHAT NOT TO DO:
+❌ User: "I want to set a goal" → Don't create a generic goal
+❌ User: "I'm stressed" → Don't auto-log a check-in
+❌ User: "help me journal" → Don't create an empty entry
+❌ User: "I feel good today" → Don't auto-log without confirmation
+
+EXAMPLES OF CORRECT BEHAVIOR:
+✅ User: "Create a goal to meditate daily for 30 days" → Create goal with title "Meditate daily" and target 30 days
+✅ User: "Log my mood as good, feeling hopeful" → Create check-in with mood "good" and notes "feeling hopeful"
+✅ User: "Save this journal entry: I had a breakthrough today..." → Create journal with that content
 
 RESPONSE FORMAT:
 - Be warm, supportive, conversational
 - Keep responses under 100 words
-- Ask ONE follow-up question to understand their needs
-- Don't announce tool usage - just do it naturally if appropriate
+- Ask follow-up questions to understand needs
+- Confirm before taking irreversible actions
 
 SAFETY: If crisis/self-harm mentioned, immediately share: 988 (Crisis Lifeline), Text HOME to 741741`;
 
