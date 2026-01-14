@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { useInterventionsRealtime } from "@/hooks/useAdminRealtime";
 import { 
   Activity, 
   Heart,
@@ -18,7 +19,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   BarChart3,
-  Sparkles
+  Sparkles,
+  Radio
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -39,13 +41,10 @@ import {
 /**
  * Interventions Page - Opik-style Crisis Intervention Analytics
  * 
- * UNIQUE FEATURES:
- * - Intervention effectiveness tracking (was_helpful feedback)
- * - Risk score distribution analysis
- * - Acknowledgement rate metrics
- * - Action taken breakdown
- * - Time-to-acknowledge analysis
- * - Intervention type patterns
+ * FEATURES:
+ * - Real-time WebSocket updates with toast notifications
+ * - Intervention effectiveness tracking
+ * - Mobile/tablet responsive layout
  */
 
 const INTERVENTION_TYPES = {
@@ -59,6 +58,9 @@ const INTERVENTION_TYPES = {
 const COLORS = ['hsl(var(--destructive))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--primary))'];
 
 export default function Interventions() {
+  // Enable real-time updates
+  useInterventionsRealtime();
+
   // Fetch intervention data from ai_observability_logs
   const { data: interventionLogs, isLoading: logsLoading } = useQuery({
     queryKey: ["admin-intervention-logs"],
@@ -90,26 +92,32 @@ export default function Interventions() {
   const metrics = interventions ? calculateInterventionMetrics(interventions, interventionLogs || []) : null;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-chart-2/10">
-            <Activity className="h-6 w-6 text-chart-2" />
+            <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-chart-2" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Intervention Analytics</h1>
-            <p className="text-muted-foreground text-sm">Crisis support & effectiveness tracking</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Intervention Analytics</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Crisis support & effectiveness tracking</p>
           </div>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1">
-          <Shield className="h-3 w-3" />
-          Anonymized
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Radio className="h-3 w-3 text-green-500 animate-pulse" />
+            <span className="text-xs">Live</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Shield className="h-3 w-3" />
+            <span className="text-xs">Anonymized</span>
+          </Badge>
+        </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
         <MetricCard
           title="Total Interventions"
           value={metrics?.totalInterventions || 0}

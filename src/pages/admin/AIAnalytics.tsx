@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { useAIAnalyticsRealtime } from "@/hooks/useAdminRealtime";
 import { 
   Bot, 
   Clock, 
@@ -15,7 +16,8 @@ import {
   Sparkles,
   Gauge,
   BarChart3,
-  PieChart
+  PieChart,
+  Radio
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -36,12 +38,11 @@ import {
 /**
  * AI Analytics Page - Opik-style Observability Dashboard
  * 
- * UNIQUE FEATURES:
- * - Latency percentiles (p50, p95, p99) - rarely implemented
+ * FEATURES:
+ * - Real-time WebSocket updates
+ * - Latency percentiles (p50, p95, p99)
  * - Token cost estimation with model breakdown
- * - Real-time throughput metrics
- * - Tool usage treemap visualization
- * - Model performance comparison
+ * - Mobile/tablet responsive layout
  */
 
 // Cost per 1K tokens (approximate)
@@ -55,6 +56,9 @@ const MODEL_COSTS = {
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function AIAnalytics() {
+  // Enable real-time updates
+  useAIAnalyticsRealtime();
+
   // Fetch all AI logs for comprehensive analytics
   const { data: aiLogs, isLoading } = useQuery({
     queryKey: ["admin-ai-analytics-full"],
@@ -72,26 +76,26 @@ export default function AIAnalytics() {
   const metrics = aiLogs ? calculateMetrics(aiLogs) : null;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
-            <Bot className="h-6 w-6 text-primary" />
+            <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">AI Analytics</h1>
-            <p className="text-muted-foreground text-sm">Opik-style observability metrics</p>
+            <h1 className="text-xl sm:text-2xl font-bold">AI Analytics</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Opik-style observability metrics</p>
           </div>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1">
-          <Sparkles className="h-3 w-3" />
-          Live Data
+        <Badge variant="outline" className="flex items-center gap-1 w-fit">
+          <Radio className="h-3 w-3 text-green-500 animate-pulse" />
+          <span className="text-xs sm:text-sm">Live</span>
         </Badge>
       </div>
 
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <MetricCard
           title="Total Calls"
           value={metrics?.totalCalls || 0}
@@ -121,14 +125,14 @@ export default function AIAnalytics() {
         />
       </div>
 
-      {/* Latency Percentiles - UNIQUE OPIK FEATURE */}
+      {/* Latency Percentiles */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gauge className="h-5 w-5" />
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Gauge className="h-4 w-4 sm:h-5 sm:w-5" />
             Latency Percentiles
           </CardTitle>
-          <CardDescription>Response time distribution (p50, p95, p99) - critical for SLA monitoring</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Response time distribution (p50, p95, p99)</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -136,7 +140,7 @@ export default function AIAnalytics() {
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <PercentileBar label="p50 (Median)" value={metrics?.p50 || 0} max={metrics?.p99 || 1000} color="bg-primary" />
               <PercentileBar label="p95" value={metrics?.p95 || 0} max={metrics?.p99 || 1000} color="bg-chart-2" />
               <PercentileBar label="p99 (Tail)" value={metrics?.p99 || 0} max={metrics?.p99 || 1000} color="bg-destructive" />
@@ -151,7 +155,7 @@ export default function AIAnalytics() {
       </Card>
 
       {/* Charts Row */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Calls Over Time */}
         <Card>
           <CardHeader>

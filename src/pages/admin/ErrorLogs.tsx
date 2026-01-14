@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useErrorLogsRealtime } from "@/hooks/useAdminRealtime";
 import { 
   Select,
   SelectContent,
@@ -25,7 +26,8 @@ import {
   Info,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Radio
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -43,12 +45,10 @@ import {
 /**
  * Error Logs Page - Opik-style Error Tracking
  * 
- * UNIQUE FEATURES:
+ * FEATURES:
+ * - Real-time WebSocket updates with toast notifications
  * - Error trend analysis over time
- * - Error categorization by severity
- * - Function-level error breakdown
- * - Expandable error details with sanitized stack traces
- * - Search and filter capabilities
+ * - Mobile/tablet responsive layout
  */
 
 const SEVERITY_CONFIG = {
@@ -61,6 +61,9 @@ const SEVERITY_CONFIG = {
 const COLORS = ['hsl(var(--destructive))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export default function ErrorLogs() {
+  // Enable real-time updates
+  useErrorLogsRealtime();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [functionFilter, setFunctionFilter] = useState<string>("all");
@@ -99,26 +102,32 @@ export default function ErrorLogs() {
   const uniqueFunctions = [...new Set(errorLogs?.map(e => e.function_name) || [])];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-destructive/10">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-destructive" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Error Logs</h1>
-            <p className="text-muted-foreground text-sm">Technical error tracking & analysis</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Error Logs</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Technical error tracking & analysis</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Radio className="h-3 w-3 text-green-500 animate-pulse" />
+            <span className="text-xs">Live</span>
+          </Badge>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <StatCard
           title="Total Errors"
           value={metrics?.totalErrors || 0}
@@ -149,26 +158,27 @@ export default function ErrorLogs() {
 
       {/* Error Trends Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
             Error Trend (Last 7 Days)
           </CardTitle>
-          <CardDescription>Daily error count over time</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Daily error count over time</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-[200px] w-full" />
+            <Skeleton className="h-[160px] sm:h-[200px] w-full" />
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={metrics?.errorTrend || []}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 10 }} />
+                <YAxis className="text-xs" tick={{ fontSize: 10 }} width={30} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))' 
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: '12px'
                   }} 
                 />
                 <Area 
@@ -184,26 +194,27 @@ export default function ErrorLogs() {
       </Card>
 
       {/* Breakdown Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Errors by Function */}
         <Card>
-          <CardHeader>
-            <CardTitle>Errors by Function</CardTitle>
-            <CardDescription>Which functions are failing most</CardDescription>
+          <CardHeader className="pb-2 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Errors by Function</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Which functions are failing most</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-[160px] sm:h-[200px] w-full" />
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={metrics?.errorsByFunction || []} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" className="text-xs" />
-                  <YAxis dataKey="function" type="category" width={120} className="text-xs" />
+                  <XAxis type="number" className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="function" type="category" width={80} className="text-xs" tick={{ fontSize: 9 }} />
                   <Tooltip
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))' 
+                      border: '1px solid hsl(var(--border))',
+                      fontSize: '12px'
                     }}
                   />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
@@ -219,12 +230,12 @@ export default function ErrorLogs() {
 
         {/* Error Categories */}
         <Card>
-          <CardHeader>
-            <CardTitle>Error Categories</CardTitle>
-            <CardDescription>Common error patterns</CardDescription>
+          <CardHeader className="pb-2 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Error Categories</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Common error patterns</CardDescription>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[200px]">
+            <ScrollArea className="h-[160px] sm:h-[200px]">
               {isLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}
@@ -233,12 +244,12 @@ export default function ErrorLogs() {
                 <div className="space-y-2">
                   {(metrics?.errorCategories || []).map((cat, i) => (
                     <div key={i} className="flex items-center justify-between p-2 rounded bg-muted/30">
-                      <span className="text-sm truncate flex-1">{cat.category}</span>
-                      <Badge variant="outline">{cat.count}</Badge>
+                      <span className="text-xs sm:text-sm truncate flex-1">{cat.category}</span>
+                      <Badge variant="outline" className="text-xs">{cat.count}</Badge>
                     </div>
                   ))}
                   {(!metrics?.errorCategories || metrics.errorCategories.length === 0) && (
-                    <p className="text-center text-muted-foreground py-4">No error categories</p>
+                    <p className="text-center text-muted-foreground py-4 text-sm">No error categories</p>
                   )}
                 </div>
               )}
@@ -249,47 +260,49 @@ export default function ErrorLogs() {
 
       {/* Error List with Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
+        <CardHeader className="pb-2 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             Error Log Browser
           </CardTitle>
-          <CardDescription>Search and filter through all errors</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Search and filter through all errors</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {/* Filters */}
-          <div className="flex flex-wrap gap-3">
-            <div className="flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex-1">
               <Input
                 placeholder="Search errors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
+                className="w-full text-sm"
               />
             </div>
-            <Select value={severityFilter} onValueChange={setSeverityFilter}>
-              <SelectTrigger className="w-[140px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Severity</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={functionFilter} onValueChange={setFunctionFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Function" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Functions</SelectItem>
-                {uniqueFunctions.map(fn => (
-                  <SelectItem key={fn} value={fn}>{fn}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                <SelectTrigger className="w-full sm:w-[130px]">
+                  <Filter className="h-4 w-4 mr-1 sm:mr-2" />
+                  <SelectValue placeholder="Severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Severity</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="warning">Warning</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={functionFilter} onValueChange={setFunctionFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Function" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Functions</SelectItem>
+                  {uniqueFunctions.map(fn => (
+                    <SelectItem key={fn} value={fn}>{fn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Error List */}

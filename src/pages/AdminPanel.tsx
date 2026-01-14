@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAdminPanelRealtime } from "@/hooks/useAdminRealtime";
 import { 
   Users, 
   Activity, 
@@ -15,24 +16,25 @@ import {
   Wrench,
   Sparkles,
   Shield,
-  BarChart3
+  BarChart3,
+  Radio
 } from "lucide-react";
 
 /**
  * Admin Panel - Privacy-Safe Opik Dashboard
  * 
- * SECURITY: This page is protected by server-side admin validation.
- * All data shown is AGGREGATED and ANONYMIZED - no individual user data.
- * 
- * Features:
+ * FEATURES:
+ * - Real-time WebSocket updates
  * - Aggregated usage statistics
- * - AI performance metrics (response times, tool usage)
- * - Error tracking and health monitoring
- * - Cost estimation based on token usage
+ * - AI performance metrics
+ * - Mobile/tablet responsive layout
  */
 
 const AdminPanel = () => {
   const { isAdmin, isLoading: authLoading } = useAdminAuth();
+
+  // Enable real-time updates
+  useAdminPanelRealtime();
 
   // Aggregated usage stats (counts only - no user-specific data)
   const { data: usageStats, isLoading: statsLoading } = useQuery({
@@ -177,58 +179,41 @@ const AdminPanel = () => {
   const isLoading = statsLoading || aiLoading;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <Shield className="h-6 w-6 text-primary" />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Privacy-safe Opik analytics</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Privacy-safe Opik analytics</p>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Radio className="h-3 w-3 text-green-500 animate-pulse" />
+            <span className="text-xs">Live</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3" />
+            <span className="text-xs sm:text-sm">Aggregated Only</span>
+          </Badge>
         </div>
-        <Badge variant="outline" className="ml-auto">
-          <Sparkles className="h-3 w-3 mr-1" />
-          Aggregated Data Only
-        </Badge>
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <StatCard
-          title="Total Users"
-          value={usageStats?.totalUsers || 0}
-          icon={Users}
-          loading={isLoading}
-        />
-        <StatCard
-          title="Check-ins"
-          value={usageStats?.totalCheckIns || 0}
-          icon={Activity}
-          loading={isLoading}
-        />
-        <StatCard
-          title="Goals"
-          value={usageStats?.totalGoals || 0}
-          icon={TrendingUp}
-          loading={isLoading}
-        />
-        <StatCard
-          title="Journals"
-          value={usageStats?.totalJournals || 0}
-          icon={BarChart3}
-          loading={isLoading}
-        />
-        <StatCard
-          title="AI Calls"
-          value={usageStats?.totalAiCalls || 0}
-          icon={Bot}
-          loading={isLoading}
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+        <StatCard title="Total Users" value={usageStats?.totalUsers || 0} icon={Users} loading={isLoading} />
+        <StatCard title="Check-ins" value={usageStats?.totalCheckIns || 0} icon={Activity} loading={isLoading} />
+        <StatCard title="Goals" value={usageStats?.totalGoals || 0} icon={TrendingUp} loading={isLoading} />
+        <StatCard title="Journals" value={usageStats?.totalJournals || 0} icon={BarChart3} loading={isLoading} />
+        <StatCard title="AI Calls" value={usageStats?.totalAiCalls || 0} icon={Bot} loading={isLoading} />
       </div>
 
       {/* AI Performance */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

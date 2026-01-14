@@ -3,12 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, Award, Calendar, Activity, Target, Shield } from "lucide-react";
+import { Users, TrendingUp, Award, Calendar, Activity, Target, Shield, Radio } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useUserStatsRealtime } from "@/hooks/useAdminRealtime";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 export default function UserStats() {
+  // Enable real-time updates
+  useUserStatsRealtime();
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-user-stats"],
     queryFn: async () => {
@@ -53,19 +57,32 @@ export default function UserStats() {
   });
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-chart-4/10">
-          <Users className="h-6 w-6 text-chart-4" />
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-chart-4/10">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-chart-4" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">User Statistics</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Aggregated engagement metrics</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">User Statistics</h1>
-          <p className="text-muted-foreground text-sm">Aggregated engagement metrics</p>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Radio className="h-3 w-3 text-green-500 animate-pulse" />
+            <span className="text-xs">Live</span>
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Shield className="h-3 w-3" />
+            <span className="text-xs">Privacy-Safe</span>
+          </Badge>
         </div>
-        <Badge variant="outline" className="ml-auto"><Shield className="h-3 w-3 mr-1" />Privacy-Safe</Badge>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {[
           { title: "Total Users", value: stats?.totalUsers || 0, icon: Users },
           { title: "Avg Streak", value: `${stats?.avgStreak || 0} days`, icon: TrendingUp },
@@ -73,31 +90,44 @@ export default function UserStats() {
           { title: "Max Streak", value: `${stats?.maxStreak || 0} days`, icon: Calendar },
         ].map((m, i) => (
           <Card key={i}>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <m.icon className="h-4 w-4" />
-                <span className="text-sm">{m.title}</span>
+            <CardContent className="pt-3 sm:pt-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1 sm:mb-2">
+                <m.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{m.title}</span>
               </div>
-              {isLoading ? <Skeleton className="h-8 w-20" /> : <p className="text-2xl font-bold">{m.value}</p>}
+              {isLoading ? (
+                <Skeleton className="h-6 sm:h-8 w-16 sm:w-20" />
+              ) : (
+                <p className="text-lg sm:text-2xl font-bold">{m.value}</p>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Level Distribution</CardTitle>
-            <CardDescription>Users by level</CardDescription>
+          <CardHeader className="pb-2 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Level Distribution</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Users by level</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-[200px]" /> : (
-              <ResponsiveContainer width="100%" height={200}>
+            {isLoading ? (
+              <Skeleton className="h-[160px] sm:h-[200px]" />
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={stats?.levelDistribution || []}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="level" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                  <XAxis dataKey="level" className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis className="text-xs" tick={{ fontSize: 10 }} width={30} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      fontSize: '12px'
+                    }} 
+                  />
                   <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -106,18 +136,38 @@ export default function UserStats() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Streak Distribution</CardTitle>
-            <CardDescription>Users by streak duration</CardDescription>
+          <CardHeader className="pb-2 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Streak Distribution</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Users by streak duration</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? <Skeleton className="h-[200px]" /> : (
-              <ResponsiveContainer width="100%" height={200}>
+            {isLoading ? (
+              <Skeleton className="h-[160px] sm:h-[200px]" />
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
-                  <Pie data={stats?.streakDistribution || []} cx="50%" cy="50%" innerRadius={40} outerRadius={80} dataKey="count" nameKey="label" label={({ label, percent }) => `${label} ${(percent * 100).toFixed(0)}%`}>
-                    {(stats?.streakDistribution || []).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  <Pie 
+                    data={stats?.streakDistribution || []} 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius={30} 
+                    outerRadius={60} 
+                    dataKey="count" 
+                    nameKey="label" 
+                    label={({ label, percent }) => `${label} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {(stats?.streakDistribution || []).map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      fontSize: '12px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             )}
