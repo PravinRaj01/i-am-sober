@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -17,6 +18,7 @@ interface ChatbotDrawerProps {
 }
 
 const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState("");
@@ -277,7 +279,11 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
   };
 
   const handleExpandToSidebar = () => onStateChange('sidebar');
-  const handleExpandToFull = () => onStateChange('full');
+  const handleExpandToFull = () => {
+    // Navigate to full-screen AI Agent page
+    onStateChange('closed');
+    navigate('/ai-agent');
+  };
   const handleMinimize = () => onStateChange('mini');
   const handleClose = () => onStateChange('closed');
 

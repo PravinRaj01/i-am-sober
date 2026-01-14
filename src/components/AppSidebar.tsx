@@ -1,9 +1,10 @@
 import { Home, Heart, BookOpen, Target, Activity, TrendingUp, Settings, Trophy, Users, X, Watch, Brain, Sparkles } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import StorageImage from "@/components/StorageImage";
+import { useSidebarOrder } from "@/hooks/useSidebarOrder";
 
 import {
   Sidebar,
@@ -17,7 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
+const allMenuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Check In", url: "/check-in", icon: Heart },
   { title: "Journal", url: "/journal", icon: BookOpen },
@@ -37,6 +38,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isDevUnlocked, setIsDevUnlocked] = useState(false);
+  const { order } = useSidebarOrder();
 
   // Check dev tools unlock state
   useEffect(() => {
@@ -47,6 +49,21 @@ export function AppSidebar() {
     window.addEventListener('storage', checkUnlock);
     return () => window.removeEventListener('storage', checkUnlock);
   }, []);
+
+  // Build ordered menu items
+  const menuItems = useMemo(() => {
+    // Dashboard is always first
+    const dashboard = allMenuItems.find(item => item.title === "Dashboard")!;
+    // Settings is always last
+    const settings = allMenuItems.find(item => item.title === "Settings")!;
+    
+    // Order middle items based on saved order
+    const middleItems = order
+      .map(title => allMenuItems.find(item => item.title === title))
+      .filter((item): item is typeof allMenuItems[number] => item !== undefined);
+    
+    return [dashboard, ...middleItems, settings];
+  }, [order]);
 
   // Fetch logo from storage
   useEffect(() => {

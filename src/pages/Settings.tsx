@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useBackground } from "@/contexts/BackgroundContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import SidebarOrderEditor from "@/components/SidebarOrderEditor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -478,6 +479,9 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Sidebar Order */}
+        <SidebarOrderEditor />
+
         {/* AI Features Info */}
         <Card className="bg-card/50 backdrop-blur-lg border-border/50">
           <CardHeader>
@@ -515,23 +519,26 @@ const Settings = () => {
                 <span>Try the Konami code...</span>
               </div>
               
-              {/* Konami progress indicator */}
-              {konamiIndicator > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {KONAMI_CODE.map((_, idx) => (
-                      <div 
-                        key={idx}
-                        className={`h-2 w-2 rounded-full transition-all duration-200 ${
-                          idx < konamiIndicator 
-                            ? 'bg-primary scale-110' 
-                            : 'bg-muted-foreground/30'
-                        }`}
-                      />
-                    ))}
+              {/* Konami progress indicator - only shows after 3 correct steps (up, up, down) */}
+              {konamiIndicator >= 3 && (
+                <div className="flex items-center gap-3 animate-fade-in">
+                  <div className="flex items-center gap-1.5 p-2 rounded-full bg-primary/10 border border-primary/30">
+                    <Gamepad2 className="h-4 w-4 text-primary" />
+                    <div className="flex gap-0.5">
+                      {KONAMI_CODE.map((_, idx) => (
+                        <div 
+                          key={idx}
+                          className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                            idx < konamiIndicator 
+                              ? 'bg-primary shadow-sm shadow-primary/50' 
+                              : 'bg-muted-foreground/20'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-xs text-primary animate-pulse">
-                    {konamiIndicator}/10 - Keep going!
+                  <span className="text-xs text-primary font-medium animate-pulse">
+                    {konamiIndicator}/10
                   </span>
                 </div>
               )}
