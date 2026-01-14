@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
@@ -34,15 +32,7 @@ import {
  */
 
 const AdminPanel = () => {
-  const navigate = useNavigate();
   const { isAdmin, isLoading: authLoading } = useAdminAuth();
-
-  // Redirect non-admins
-  useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/", { replace: true });
-    }
-  }, [isAdmin, authLoading, navigate]);
 
   // Aggregated usage stats (counts only - no user-specific data)
   const { data: usageStats, isLoading: statsLoading } = useQuery({

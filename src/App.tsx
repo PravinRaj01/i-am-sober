@@ -23,6 +23,7 @@ import AIAgent from "./pages/AIAgent";
 import Install from "./pages/Install";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
+import { AdminLayout } from "./layouts/AdminLayout";
 
 // Lazy load admin panel - only fetched for admin users
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
@@ -31,48 +32,63 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   return (
-    <>
-      <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/onboarding" element={<OnboardingWizard />} />
-        <Route path="/install" element={<Install />} />
-        {/* AI Agent route moved inside SidebarProvider */}
-        <Route path="/*" element={
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full bg-background relative">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto relative z-10 w-full h-screen">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/check-in" element={<CheckIn />} />
-                  <Route path="/journal" element={<Journal />} />
-                  <Route path="/goals" element={<Goals />} />
-                  <Route path="/coping" element={<CopingTools />} />
-                  <Route path="/progress" element={<Progress />} />
-                  <Route path="/achievements" element={<Achievements />} />
-                  <Route path="/community" element={<Community />} />
-                  <Route path="/wearables" element={<WearableData />} />
-                  <Route path="/ai-observability" element={
-                    localStorage.getItem('devToolsUnlocked') === 'true' 
-                      ? <AIObservability /> 
-                      : <Navigate to="/settings" replace />
-                  } />
-                  <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
-                  <Route path="/ai-agent" element={<AIAgent />} />
-                  <Route path="/admin" element={
-                    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-                      <AdminPanel />
-                    </Suspense>
-                  } />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/onboarding" element={<OnboardingWizard />} />
+      <Route path="/install" element={<Install />} />
+
+      {/* Admin routes - separate layout */}
+      <Route path="/admin/*" element={
+        <AdminLayout>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center space-y-2">
+                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-sm text-muted-foreground">Loading admin panel...</p>
+              </div>
             </div>
-          </SidebarProvider>
-        } />
-      </Routes>
-    </>
+          }>
+            <Routes>
+              <Route index element={<AdminPanel />} />
+              {/* Future admin routes: /admin/ai-analytics, /admin/errors, etc. */}
+              <Route path="*" element={<AdminPanel />} />
+            </Routes>
+          </Suspense>
+        </AdminLayout>
+      } />
+
+      {/* User routes - AppSidebar layout */}
+      <Route path="/*" element={
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-background relative">
+            <AppSidebar />
+            <main className="flex-1 overflow-auto relative z-10 w-full h-screen">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/check-in" element={<CheckIn />} />
+                <Route path="/journal" element={<Journal />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/coping" element={<CopingTools />} />
+                <Route path="/progress" element={<Progress />} />
+                <Route path="/achievements" element={<Achievements />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/wearables" element={<WearableData />} />
+                <Route path="/ai-observability" element={
+                  localStorage.getItem('devToolsUnlocked') === 'true' 
+                    ? <AIObservability /> 
+                    : <Navigate to="/settings" replace />
+                } />
+                <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
+                <Route path="/ai-agent" element={<AIAgent />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </div>
+        </SidebarProvider>
+      } />
+    </Routes>
   );
 };
 
