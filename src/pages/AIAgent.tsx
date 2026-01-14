@@ -11,7 +11,6 @@ import {
   Loader2, 
   Send, 
   Sparkles, 
-  ArrowLeft, 
   Plus, 
   Trash2, 
   MessageSquare, 
@@ -322,19 +321,11 @@ const AIAgent = () => {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40">
         <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
             <Avatar className="h-10 w-10 border-2 border-primary/20 bg-card">
               <StorageImage
                 bucket="logos"
@@ -350,7 +341,7 @@ const AIAgent = () => {
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold">AI Recovery Agent</h1>
+                <h1 className="text-lg font-bold">AI Coach</h1>
                 <Sparkles className="h-4 w-4 text-primary animate-pulse" />
               </div>
               <p className="text-xs text-muted-foreground">Your intelligent recovery companion</p>
@@ -512,7 +503,7 @@ const AIAgent = () => {
                   <div>
                     <h2 className="text-2xl font-bold mb-2">Welcome! 👋</h2>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      I'm your AI recovery agent. I can help you set goals, log your mood, write journal entries, and provide personalized support on your recovery journey.
+                      I'm your AI Coach. I can help you set goals, log your mood, write journal entries, and provide personalized support on your recovery journey.
                     </p>
                   </div>
                 </div>

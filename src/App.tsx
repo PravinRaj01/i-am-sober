@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { lazy, Suspense } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import CheckIn from "./pages/CheckIn";
@@ -23,6 +24,9 @@ import Install from "./pages/Install";
 import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 
+// Lazy load admin panel - only fetched for admin users
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+
 const queryClient = new QueryClient();
 
 const AppContent = () => {
@@ -32,7 +36,7 @@ const AppContent = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<OnboardingWizard />} />
         <Route path="/install" element={<Install />} />
-        <Route path="/ai-agent" element={<AIAgent />} />
+        {/* AI Agent route moved inside SidebarProvider */}
         <Route path="/*" element={
           <SidebarProvider>
             <div className="min-h-screen flex w-full bg-background relative">
@@ -54,6 +58,12 @@ const AppContent = () => {
                       : <Navigate to="/settings" replace />
                   } />
                   <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
+                  <Route path="/ai-agent" element={<AIAgent />} />
+                  <Route path="/admin" element={
+                    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+                      <AdminPanel />
+                    </Suspense>
+                  } />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

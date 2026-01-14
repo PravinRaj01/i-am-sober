@@ -1,3 +1,45 @@
+/**
+ * AI COACH - ReAct Agent with Tool-Augmented LLM
+ * 
+ * Architecture Pattern: ReAct (Reasoning + Acting)
+ * Similar to: LangChain Agents, OpenAI Assistants API (but custom-built)
+ * Model: Llama 3.3 70B via Groq API
+ * 
+ * How it works:
+ * 1. User sends message
+ * 2. LLM receives context + available tools + conversation history
+ * 3. LLM decides: respond directly OR use a tool
+ * 4. If tool: Execute tool → Feed result back → LLM responds
+ * 5. If no tool: LLM responds directly
+ * 
+ * Why this is truly agentic (not hardcoded):
+ * - The LLM dynamically chooses which tools to use
+ * - Tool selection based on semantic understanding of user intent
+ * - Regex patterns are GUARDRAILS only (prevent unsafe auto-execution)
+ * - LLM can chain multiple tools in complex scenarios
+ * 
+ * Available Tools:
+ * READ (always available):
+ *   - get_user_progress: Sobriety stats, streaks, level, XP
+ *   - get_recent_moods: Check-in history, mood trends
+ *   - get_active_goals: Current goals and progress
+ *   - get_recent_journal_entries: Journal excerpts
+ *   - get_biometric_data: Wearable health data
+ *   - suggest_coping_activity: Context-aware coping suggestions
+ * 
+ * WRITE (enabled when user provides explicit details):
+ *   - create_goal: Create new recovery goals
+ *   - create_check_in: Log mood/urge check-ins
+ *   - create_journal_entry: Save journal entries
+ *   - complete_goal: Mark goals as done
+ *   - log_coping_activity: Track coping strategy usage
+ * 
+ * META:
+ *   - log_intervention: Track AI interventions for observability
+ * 
+ * Observability: All interactions logged to ai_observability_logs table
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -675,7 +717,7 @@ serve(async (req) => {
     // Only enable write tools if user provides SPECIFIC details with explicit action request
     const enableWriteTools = hasSpecificGoalDetails || hasSpecificJournalDetails || hasSpecificCheckInDetails || hasSpecificCopingDetails || hasGoalCompletionRequest;
 
-    const systemPrompt = `You are an empathetic AI Recovery Coach for a sobriety app. You help users in their recovery journey with compassion and evidence-based support.
+    const systemPrompt = `You are AI Coach, an empathetic recovery companion. You help users in their recovery journey with compassion and evidence-based support.
 
 USER CONTEXT:
 - Name: ${profile?.pseudonym || "Friend"}
