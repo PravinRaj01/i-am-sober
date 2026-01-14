@@ -58,12 +58,20 @@ export function AppSidebar() {
     // Settings is always last
     const settings = allMenuItems.find(item => item.title === "Settings")!;
     
-    // Order middle items based on saved order
-    const middleItems = order
-      .map(title => allMenuItems.find(item => item.title === title))
+    // Get all middle items (excluding Dashboard and Settings)
+    const allMiddleItems = allMenuItems.filter(item => 
+      item.title !== "Dashboard" && item.title !== "Settings"
+    );
+    
+    // Order based on saved order, but include any new items not in the saved order
+    const orderedItems = order
+      .map(title => allMiddleItems.find(item => item.title === title))
       .filter((item): item is typeof allMenuItems[number] => item !== undefined);
     
-    return [dashboard, ...middleItems, settings];
+    // Add any items that exist in allMiddleItems but not in saved order (new items)
+    const newItems = allMiddleItems.filter(item => !order.includes(item.title));
+    
+    return [dashboard, ...orderedItems, ...newItems, settings];
   }, [order]);
 
   // Fetch logo from storage
