@@ -10,6 +10,7 @@ const DEFAULT_ORDER = [
   "Achievements",
   "Wearables",
   "Recovery Insights",
+  "AI Agent",
   "AI Observability",
   "Community",
 ];
