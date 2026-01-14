@@ -30,7 +30,7 @@ function sanitizeInput(input: string, maxLength: number = 5000): string {
   return sanitized;
 }
 
-// Define AI Agent Tools
+// Define AI Agent Tools - Now includes WRITE actions for agentic behavior
 const agentTools = [
   {
     type: "function",
@@ -108,6 +108,122 @@ const agentTools = [
           }
         },
         required: ["intervention_type"]
+      }
+    }
+  },
+  // NEW AGENTIC WRITE TOOLS
+  {
+    type: "function",
+    function: {
+      name: "create_goal",
+      description: "Create a new recovery goal for the user. Use this when the user asks to set a goal, wants to track something, or mentions a new goal they want to achieve.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { 
+            type: "string",
+            description: "The goal title (e.g., 'Exercise 3 times a week', 'Attend AA meeting')"
+          },
+          description: {
+            type: "string",
+            description: "Optional description with more details about the goal"
+          },
+          target_days: {
+            type: "number",
+            description: "Number of days to achieve this goal (optional)"
+          }
+        },
+        required: ["title"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_check_in",
+      description: "Log a mood check-in for the user. Use this when the user shares how they're feeling, their mood, or their urge level.",
+      parameters: {
+        type: "object",
+        properties: {
+          mood: { 
+            type: "string",
+            enum: ["great", "good", "okay", "struggling", "crisis"],
+            description: "The user's current mood"
+          },
+          urge_intensity: {
+            type: "number",
+            description: "Urge intensity from 0-10 (0 = no urge, 10 = extreme urge)"
+          },
+          notes: {
+            type: "string",
+            description: "Notes about the check-in, context, or what triggered the mood"
+          }
+        },
+        required: ["mood"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_journal_entry",
+      description: "Create a journal entry for the user. Use this when the user wants to journal, write down thoughts, or reflect on something.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { 
+            type: "string",
+            description: "Title for the journal entry"
+          },
+          content: {
+            type: "string",
+            description: "The journal content - capture what the user shared"
+          }
+        },
+        required: ["content"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "complete_goal",
+      description: "Mark a goal as completed. Use this when the user says they've achieved or completed a specific goal.",
+      parameters: {
+        type: "object",
+        properties: {
+          goal_title: { 
+            type: "string",
+            description: "The title of the goal to mark as complete (will fuzzy match)"
+          }
+        },
+        required: ["goal_title"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "log_coping_activity",
+      description: "Log that the user used a coping activity. Use this when the user mentions they did a coping activity or used a strategy.",
+      parameters: {
+        type: "object",
+        properties: {
+          activity_name: { 
+            type: "string",
+            description: "Name of the coping activity (e.g., 'Deep breathing', 'Went for a walk')"
+          },
+          category: {
+            type: "string",
+            enum: ["breathing", "physical", "mindfulness", "social", "creative", "other"],
+            description: "Category of the activity"
+          },
+          helpful: {
+            type: "boolean",
+            description: "Whether the activity was helpful"
+          }
+        },
+        required: ["activity_name", "category"]
       }
     }
   }
@@ -307,6 +423,185 @@ async function executeTool(supabase: any, userId: string, toolName: string, args
       return { logged: true, intervention_type: args.intervention_type };
     }
     
+    // NEW AGENTIC WRITE TOOLS
+    case "create_goal": {
+      const startDate = new Date();
+      const endDate = args.target_days 
+        ? new Date(Date.now() + args.target_days * 24 * 60 * 60 * 1000)
+        : null;
+      
+      const { data, error } = await supabase
+        .from("goals")
+        .insert({
+          user_id: userId,
+          title: args.title,
+          description: args.description || null,
+          target_days: args.target_days || null,
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate ? endDate.toISOString().split('T')[0] : null,
+          progress: 0,
+          completed: false
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating goal:", error);
+        return { success: false, error: error.message };
+      }
+      
+      return { 
+        success: true, 
+        message: `Goal "${args.title}" has been created!`,
+        goal: data
+      };
+    }
+    
+    case "create_check_in": {
+      const { data, error } = await supabase
+        .from("check_ins")
+        .insert({
+          user_id: userId,
+          mood: args.mood,
+          urge_intensity: args.urge_intensity || null,
+          notes: args.notes || null
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating check-in:", error);
+        return { success: false, error: error.message };
+      }
+      
+      // Update profile streak
+      await supabase
+        .from("profiles")
+        .update({ 
+          last_check_in: new Date().toISOString(),
+          current_streak: supabase.rpc ? undefined : 1 // Will be handled by trigger if exists
+        })
+        .eq("id", userId);
+      
+      return { 
+        success: true, 
+        message: `Check-in logged! Mood: ${args.mood}${args.urge_intensity ? `, Urge: ${args.urge_intensity}/10` : ''}`,
+        check_in: data
+      };
+    }
+    
+    case "create_journal_entry": {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .insert({
+          user_id: userId,
+          title: args.title || `Journal - ${new Date().toLocaleDateString()}`,
+          content: args.content
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating journal entry:", error);
+        return { success: false, error: error.message };
+      }
+      
+      return { 
+        success: true, 
+        message: "Journal entry saved!",
+        entry: data
+      };
+    }
+    
+    case "complete_goal": {
+      // Find goal by fuzzy title match
+      const { data: goals } = await supabase
+        .from("goals")
+        .select("id, title")
+        .eq("user_id", userId)
+        .eq("completed", false);
+      
+      if (!goals || goals.length === 0) {
+        return { success: false, message: "No active goals found." };
+      }
+      
+      // Simple fuzzy match - find goal with most word overlap
+      const targetWords = args.goal_title.toLowerCase().split(/\s+/);
+      let bestMatch = goals[0];
+      let bestScore = 0;
+      
+      for (const goal of goals) {
+        const goalWords = goal.title.toLowerCase().split(/\s+/);
+        const overlap = targetWords.filter((w: string) => goalWords.some((gw: string) => gw.includes(w) || w.includes(gw))).length;
+        if (overlap > bestScore) {
+          bestScore = overlap;
+          bestMatch = goal;
+        }
+      }
+      
+      const { error } = await supabase
+        .from("goals")
+        .update({ completed: true, progress: 100 })
+        .eq("id", bestMatch.id);
+      
+      if (error) {
+        console.error("Error completing goal:", error);
+        return { success: false, error: error.message };
+      }
+      
+      return { 
+        success: true, 
+        message: `🎉 Goal "${bestMatch.title}" marked as complete! Great job!`
+      };
+    }
+    
+    case "log_coping_activity": {
+      // Check if activity already exists
+      const { data: existing } = await supabase
+        .from("coping_activities")
+        .select("id, times_used")
+        .eq("user_id", userId)
+        .eq("activity_name", args.activity_name)
+        .single();
+      
+      if (existing) {
+        // Update existing
+        await supabase
+          .from("coping_activities")
+          .update({ 
+            times_used: (existing.times_used || 0) + 1,
+            helpful: args.helpful !== undefined ? args.helpful : true
+          })
+          .eq("id", existing.id);
+        
+        return { 
+          success: true, 
+          message: `Logged "${args.activity_name}" - you've used this ${(existing.times_used || 0) + 1} times!`
+        };
+      } else {
+        // Create new
+        const { error } = await supabase
+          .from("coping_activities")
+          .insert({
+            user_id: userId,
+            activity_name: args.activity_name,
+            category: args.category,
+            helpful: args.helpful !== undefined ? args.helpful : true,
+            times_used: 1
+          });
+        
+        if (error) {
+          console.error("Error logging coping activity:", error);
+          return { success: false, error: error.message };
+        }
+        
+        return { 
+          success: true, 
+          message: `Great! "${args.activity_name}" has been logged as a coping activity.`
+        };
+      }
+    }
+    
     default:
       return { error: `Unknown tool: ${toolName}` };
   }
@@ -366,23 +661,37 @@ USER CONTEXT:
 - Days sober: ${daysSober}
 - Level: ${profile?.level || 1}
 
-YOUR CAPABILITIES (use tools when helpful):
+YOUR CAPABILITIES - USE THESE TOOLS ACTIVELY:
+
+READ TOOLS (to understand the user):
 - get_user_progress: Check their sobriety stats and achievements
 - get_recent_moods: Analyze their recent emotional patterns
 - get_active_goals: Review their recovery goals
-- suggest_coping_activity: Recommend personalized coping strategies
 - get_recent_journal_entries: Understand their recent reflections
 - get_biometric_data: Check wearable health data if available
+
+WRITE TOOLS (to take action for the user):
+- create_goal: Create a new goal when user mentions wanting to achieve something
+- create_check_in: Log a mood check-in when user shares how they're feeling
+- create_journal_entry: Save thoughts when user wants to journal or reflect
+- complete_goal: Mark a goal done when user says they achieved it
+- log_coping_activity: Track when user mentions using a coping strategy
+
+SUPPORT TOOLS:
+- suggest_coping_activity: Recommend personalized coping strategies
 - log_intervention: Track when you provide significant support
 
-GUIDELINES:
-1. Be warm, supportive, and non-judgmental
-2. Use tools to personalize your responses with real user data
-3. Celebrate progress, no matter how small
-4. If user mentions crisis/self-harm, IMMEDIATELY provide 988 hotline
-5. Keep responses concise but meaningful (under 200 words)
-6. Never provide medical advice - encourage professional help when needed
-7. Use the user's name to create connection
+CRITICAL INSTRUCTIONS:
+1. BE PROACTIVE WITH TOOLS! When user says "I want to set a goal to exercise", USE create_goal immediately!
+2. When user says "I'm feeling stressed/happy/sad", USE create_check_in to log it!
+3. When user shares thoughts they want to remember, USE create_journal_entry!
+4. When user says they completed something, USE complete_goal!
+5. ALWAYS confirm actions: "I've created your goal..." or "I've logged your check-in..."
+6. Be warm, supportive, and non-judgmental
+7. Celebrate progress, no matter how small
+8. If user mentions crisis/self-harm, IMMEDIATELY provide 988 hotline
+9. Keep responses concise but meaningful (under 200 words)
+10. Never provide medical advice - encourage professional help when needed
 
 SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize crisis resources:
 - Crisis Lifeline: 988
@@ -434,6 +743,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
     // Handle tool calls (ReAct loop)
     let iterations = 0;
     const maxIterations = 5;
+    let allToolResults: any[] = [];
     
     while (assistantMessage.tool_calls && iterations < maxIterations) {
       iterations++;
@@ -449,6 +759,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         toolsCalled.push(toolName);
         
         const result = await executeTool(supabase, user.id, toolName, toolArgs);
+        allToolResults.push({ tool: toolName, result });
         
         toolResults.push({
           role: "tool",
@@ -497,6 +808,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         function_name: "chat-with-ai",
         input_summary: sanitizedMessage.substring(0, 100),
         tools_called: toolsCalled,
+        tool_results: allToolResults,
         response_summary: finalContent.substring(0, 200),
         response_time_ms: responseTimeMs,
         model_used: "llama-3.3-70b-versatile",

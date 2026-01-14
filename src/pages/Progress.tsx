@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ProgressCharts } from "@/components/progress/ProgressCharts";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import BiometricTrendsChart from "@/components/BiometricTrendsChart";
 
 const Progress = () => {
   const navigate = useNavigate();
@@ -167,6 +168,9 @@ const Progress = () => {
 
         {/* Advanced Insights */}
         <ProgressCharts />
+        
+        {/* Biometric Trends */}
+        <BiometricTrendsChart />
 
         {/* Stats Overview */}
         <div className="grid md:grid-cols-3 gap-4">
