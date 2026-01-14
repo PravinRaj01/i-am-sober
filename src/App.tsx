@@ -25,8 +25,9 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./layouts/AdminLayout";
 
-// Lazy load admin panel - only fetched for admin users
+// Lazy load admin components - only fetched for admin users
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,17 @@ const AppContent = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/onboarding" element={<OnboardingWizard />} />
       <Route path="/install" element={<Install />} />
+
+      {/* Admin login - separate from admin layout */}
+      <Route path="/admin/login" element={
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-screen">
+            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        }>
+          <AdminLogin />
+        </Suspense>
+      } />
 
       {/* Admin routes - separate layout */}
       <Route path="/admin/*" element={

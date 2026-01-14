@@ -1,7 +1,8 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Shield, AlertCircle } from "lucide-react";
 
@@ -11,16 +12,40 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { isAdmin, isLoading, error } = useAdminAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const navigate = useNavigate();
 
+  // Check if user is logged in at all
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      navigate("/", { replace: true });
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Redirect to admin login if not authenticated
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      navigate("/admin/login", { replace: true });
     }
-  }, [isAdmin, isLoading, navigate]);
+  }, [isAuthenticated, navigate]);
+
+  // Redirect to admin login if authenticated but not admin
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && !isAdmin) {
+      navigate("/admin/login", { replace: true });
+    }
+  }, [isAdmin, isLoading, isAuthenticated, navigate]);
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -54,8 +79,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // Not admin (will redirect)
-  if (!isAdmin) {
+  // Not authenticated or not admin (will redirect)
+  if (!isAuthenticated || !isAdmin) {
     return null;
   }
 
