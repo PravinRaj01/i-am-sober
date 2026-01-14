@@ -705,22 +705,22 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       { role: "user", content: sanitizedMessage }
     ];
 
-    // Use Groq API
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    if (!GROQ_API_KEY) {
-      throw new Error("GROQ_API_KEY not configured");
+    // Use Lovable AI Gateway
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    console.log("Calling Groq API with agent tools");
+    console.log("Calling Lovable AI Gateway with agent tools");
 
-    let aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    let aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "google/gemini-3-flash-preview",
         messages,
         tools: agentTools,
         tool_choice: "auto",
@@ -755,7 +755,20 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       
       for (const toolCall of assistantMessage.tool_calls) {
         const toolName = toolCall.function.name;
-        const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+        let toolArgs: any = {};
+        
+        try {
+          toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+          // Validate and clean null string values
+          for (const key in toolArgs) {
+            if (toolArgs[key] === "null" || toolArgs[key] === null) {
+              delete toolArgs[key];
+            }
+          }
+        } catch (parseError) {
+          console.error("Failed to parse tool arguments:", parseError);
+          toolArgs = {};
+        }
         
         console.log(`Executing tool: ${toolName}`, toolArgs);
         toolsCalled.push(toolName);
@@ -776,14 +789,14 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         ...toolResults
       ];
       
-      aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "google/gemini-3-flash-preview",
           messages: updatedMessages,
           tools: agentTools,
           tool_choice: "auto",
@@ -813,7 +826,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         tool_results: allToolResults,
         response_summary: finalContent.substring(0, 200),
         response_time_ms: responseTimeMs,
-        model_used: "llama-3.3-70b-versatile",
+        model_used: "google/gemini-3-flash-preview",
         intervention_triggered: toolsCalled.includes("log_intervention"),
       });
     } catch (logError) {
