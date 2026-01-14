@@ -25,48 +25,39 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./layouts/AdminLayout";
 
-// Lazy load admin components - only fetched for admin users
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AIAnalytics = lazy(() => import("./pages/admin/AIAnalytics"));
+const ErrorLogs = lazy(() => import("./pages/admin/ErrorLogs"));
+const Interventions = lazy(() => import("./pages/admin/Interventions"));
+const UserStats = lazy(() => import("./pages/admin/UserStats"));
 
 const queryClient = new QueryClient();
+
+const AdminLoader = () => (
+  <div className="flex items-center justify-center h-screen">
+    <div className="text-center space-y-2">
+      <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 const AppContent = () => {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/onboarding" element={<OnboardingWizard />} />
       <Route path="/install" element={<Install />} />
+      <Route path="/admin/login" element={<Suspense fallback={<AdminLoader />}><AdminLogin /></Suspense>} />
 
-      {/* Admin login - completely separate, no layout */}
-      <Route path="/admin/login" element={
-        <Suspense fallback={
-          <div className="flex items-center justify-center h-screen bg-background">
-            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          </div>
-        }>
-          <AdminLogin />
-        </Suspense>
-      } />
+      {/* Admin routes */}
+      <Route path="/admin" element={<AdminLayout><Suspense fallback={<AdminLoader />}><AdminPanel /></Suspense></AdminLayout>} />
+      <Route path="/admin/ai-analytics" element={<AdminLayout><Suspense fallback={<AdminLoader />}><AIAnalytics /></Suspense></AdminLayout>} />
+      <Route path="/admin/errors" element={<AdminLayout><Suspense fallback={<AdminLoader />}><ErrorLogs /></Suspense></AdminLayout>} />
+      <Route path="/admin/interventions" element={<AdminLayout><Suspense fallback={<AdminLoader />}><Interventions /></Suspense></AdminLayout>} />
+      <Route path="/admin/users" element={<AdminLayout><Suspense fallback={<AdminLoader />}><UserStats /></Suspense></AdminLayout>} />
 
-      {/* Admin dashboard - protected by AdminLayout */}
-      <Route path="/admin" element={
-        <AdminLayout>
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-screen">
-              <div className="text-center space-y-2">
-                <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-muted-foreground">Loading admin panel...</p>
-              </div>
-            </div>
-          }>
-            <AdminPanel />
-          </Suspense>
-        </AdminLayout>
-      } />
-
-      {/* User routes - AppSidebar layout */}
       <Route path="/*" element={
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background relative">
@@ -82,11 +73,7 @@ const AppContent = () => {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/community" element={<Community />} />
                 <Route path="/wearables" element={<WearableData />} />
-                <Route path="/ai-observability" element={
-                  localStorage.getItem('devToolsUnlocked') === 'true' 
-                    ? <AIObservability /> 
-                    : <Navigate to="/settings" replace />
-                } />
+                <Route path="/ai-observability" element={localStorage.getItem('devToolsUnlocked') === 'true' ? <AIObservability /> : <Navigate to="/settings" replace />} />
                 <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
                 <Route path="/ai-agent" element={<AIAgent />} />
                 <Route path="/settings" element={<Settings />} />
