@@ -13,6 +13,9 @@ import { Eye, EyeOff, Loader2, Shield, ArrowLeft } from "lucide-react";
  * 
  * This is a dedicated login for administrators only.
  * After login, validates admin role via edge function before granting access.
+ * 
+ * If someone is already logged in (regular user), they'll be signed out
+ * before they can attempt admin login.
  */
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -23,7 +26,7 @@ const AdminLogin = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check if already logged in as admin
+  // On mount, check if already an admin; otherwise sign out any existing session
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
@@ -45,13 +48,19 @@ const AdminLogin = () => {
           if (response.ok) {
             const data = await response.json();
             if (data.isAdmin) {
+              // Already logged in as admin, go to admin panel
               navigate("/admin", { replace: true });
               return;
             }
           }
+
+          // Not an admin - sign them out so they can login as admin
+          await supabase.auth.signOut();
         }
       } catch (error) {
         console.error("Auth check error:", error);
+        // On error, sign out to be safe
+        await supabase.auth.signOut();
       } finally {
         setCheckingAuth(false);
       }
@@ -205,11 +214,11 @@ const AdminLogin = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/")}
               className="text-muted-foreground"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to User Login
+              Go to Main App
             </Button>
           </div>
         </form>
