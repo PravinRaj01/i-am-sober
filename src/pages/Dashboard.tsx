@@ -25,6 +25,7 @@ import RecentCommunityCard from "@/components/community/RecentCommunityCard";
 import LevelUpDialog from "@/components/LevelUpDialog";
 import { useLevelUp } from "@/hooks/useLevelUp";
 import ProactiveIntervention from "@/components/ProactiveIntervention";
+import HealthStatusCard from "@/components/HealthStatusCard";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -241,6 +242,7 @@ const Dashboard = () => {
 
           {/* Right Column - Activity Feed & Community */}
           <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+            <HealthStatusCard />
             <RecentCommunityCard />
             <ActivityFeed />
           </div>

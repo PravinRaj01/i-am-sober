@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Bell, User, Shield, LogOut, Sparkles, Info, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Bell, User, Shield, LogOut, Sparkles, Info, RefreshCw, Trash2, AlertTriangle, Gamepad2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useBackground } from "@/contexts/BackgroundContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,6 +25,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+const KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,6 +38,7 @@ const Settings = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [pseudonym, setPseudonym] = useState("");
   const [addictionType, setAddictionType] = useState<string>("");
+  const [konamiProgress, setKonamiProgress] = useState<string[]>([]);
   
   // Notification settings
   const [dailyReminder, setDailyReminder] = useState(true);
@@ -46,6 +50,45 @@ const Settings = () => {
   const [shareJournal, setShareJournal] = useState(false);
   const [shareCheckIns, setShareCheckIns] = useState(false);
   const [shareMilestones, setShareMilestones] = useState(true);
+
+  // Check if dev tools are unlocked
+  const isDevUnlocked = localStorage.getItem('devToolsUnlocked') === 'true';
+
+  // Konami code listener
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const key = event.key;
+    
+    setKonamiProgress(prev => {
+      const newProgress = [...prev, key].slice(-10);
+      
+      // Check if the sequence matches
+      const isMatch = newProgress.every((k, i) => k === KONAMI_CODE[i]);
+      
+      if (isMatch && newProgress.length === KONAMI_CODE.length) {
+        // Konami code complete!
+        localStorage.setItem('devToolsUnlocked', 'true');
+        toast({
+          title: "🎮 Developer Mode Unlocked!",
+          description: "You found the secret! AI Observability is now accessible.",
+        });
+        navigate('/ai-observability');
+        return [];
+      }
+      
+      // Check if still on track
+      const isOnTrack = newProgress.every((k, i) => k === KONAMI_CODE[i]);
+      if (!isOnTrack) {
+        return [];
+      }
+      
+      return newProgress;
+    });
+  }, [toast, navigate]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const { data: profile, refetch, isLoading, error } = useQuery({
     queryKey: ["settings-profile"],
@@ -458,6 +501,24 @@ const Settings = () => {
                 </p>
               </AlertDescription>
             </Alert>
+            
+            {/* Hidden hint for developers */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/50 mt-4">
+              <Gamepad2 className="h-3 w-3" />
+              <span>Old school gamers might find something special here... ↑↑↓↓←→←→</span>
+            </div>
+            
+            {/* Show dev tools link if unlocked */}
+            {isDevUnlocked && (
+              <Button 
+                variant="outline" 
+                className="w-full mt-2"
+                onClick={() => navigate('/ai-observability')}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Open AI Observability Dashboard
+              </Button>
+            )}
           </CardContent>
         </Card>
 
