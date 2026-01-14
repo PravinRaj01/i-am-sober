@@ -653,6 +653,14 @@ serve(async (req) => {
       ? Math.floor((Date.now() - new Date(profile.sobriety_start_date).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
+    // Check if user is giving specific actionable details
+    const hasSpecificGoalDetails = /(?:goal|track|set).*(?:for|to|called|named|:)\s*["']?[\w\s]+["']?|(?:^|\s)(?:\d+\s*(?:days?|weeks?|hours?|minutes?)|exercise|meditate|read|walk|run|swim|attend|call|journal)/i.test(sanitizedMessage);
+    const hasSpecificMoodDetails = /(?:feeling|mood|i'?m|i am)\s+(?:great|good|okay|ok|bad|terrible|struggling|crisis|sad|happy|anxious|stressed|angry)/i.test(sanitizedMessage);
+    const isExplicitActionRequest = /(?:create|set|make|add|log|record|save|track)\s+(?:a\s+)?(?:goal|check-?in|journal|entry|mood)/i.test(sanitizedMessage);
+    
+    // Only enable write tools if user provides specific details or explicitly requests action
+    const enableWriteTools = hasSpecificGoalDetails || hasSpecificMoodDetails || isExplicitActionRequest;
+
     const systemPrompt = `You are an empathetic AI Recovery Coach for a sobriety app. You help users in their recovery journey with compassion and evidence-based support.
 
 USER CONTEXT:
@@ -661,43 +669,36 @@ USER CONTEXT:
 - Days sober: ${daysSober}
 - Level: ${profile?.level || 1}
 
-YOUR CAPABILITIES - USE THESE TOOLS WHEN APPROPRIATE:
+YOUR ROLE: Be a supportive companion first, action-taker second.
 
-READ TOOLS (to understand the user):
-- get_user_progress: Check their sobriety stats and achievements
-- get_recent_moods: Analyze their recent emotional patterns
-- get_active_goals: Review their recovery goals
-- get_recent_journal_entries: Understand their recent reflections
-- get_biometric_data: Check wearable health data if available
+CONVERSATION RULES (CRITICAL - FOLLOW THESE EXACTLY):
+1. LISTEN and RESPOND to what the user actually said
+2. Have a natural conversation - ask follow-up questions
+3. DO NOT assume what the user wants - ASK them
+4. If user says "I want to create a goal" - ASK "What goal would you like to set?" 
+5. If user says "I'm feeling X" - RESPOND with empathy, don't auto-log unless asked
+6. Only use action tools when user provides SPECIFIC details AND confirms they want action
 
-WRITE TOOLS (to take action for the user):
-- create_goal: Create a new goal when user EXPLICITLY asks to set a goal
-- create_check_in: Log a mood check-in when user WANTS to log their mood
-- create_journal_entry: Save thoughts when user REQUESTS to journal
-- complete_goal: Mark a goal done when user says they achieved it
-- log_coping_activity: Track when user mentions using a coping strategy
+WHEN TO USE TOOLS:
+- READ tools: Use freely to understand user's context
+- WRITE tools: ONLY when user provides COMPLETE details like:
+  - "Create a goal to exercise 3 times a week for 2 weeks" ✓
+  - "Log my mood as good" ✓
+  - "I want to create a goal" ✗ (ask what goal first!)
+  - "I'm feeling stressed" ✗ (respond with empathy, ask if they want to log)
 
-SUPPORT TOOLS:
-- suggest_coping_activity: Recommend personalized coping strategies
-- log_intervention: Track when you provide significant support
+RESPONSE FORMAT:
+- Be warm, supportive, conversational
+- Keep responses under 100 words
+- Ask ONE follow-up question to understand their needs
+- Don't announce tool usage - just do it naturally if appropriate
 
-CRITICAL INSTRUCTIONS:
-1. LISTEN FIRST! Read and understand what the user is saying before responding.
-2. RESPOND DIRECTLY to what the user said - address their actual question or statement.
-3. DO NOT use tools unless the user EXPLICITLY asks for something that requires a tool.
-4. If user asks a question, ANSWER the question first before doing anything else.
-5. If user says "listen to me" or "wait" - STOP and pay attention to what they're saying next.
-6. Be conversational - have a natural dialogue, not a tool-execution machine.
-7. Only use create_goal when user says things like "create a goal", "set a goal", "I want to track..."
-8. Only use create_check_in when user says "log my mood", "check me in", "record how I feel"
-9. CONFIRM before taking actions: "Would you like me to create a goal for that?"
-10. Be warm, supportive, and non-judgmental
-11. Keep responses concise but meaningful (under 150 words)
-12. If user mentions crisis/self-harm, IMMEDIATELY provide 988 hotline
+SAFETY: If crisis/self-harm mentioned, immediately share: 988 (Crisis Lifeline), Text HOME to 741741`;
 
-SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize crisis resources:
-- Crisis Lifeline: 988
-- Crisis Text: Text HOME to 741741`;
+    // Filter tools based on context
+    const activeTools = enableWriteTools ? agentTools : agentTools.filter(t => 
+      !["create_goal", "create_check_in", "create_journal_entry", "complete_goal", "log_coping_activity"].includes(t.function.name)
+    );
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -722,8 +723,8 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages,
-        tools: agentTools,
-        tool_choice: "auto",
+        tools: activeTools.length > 0 ? activeTools : undefined,
+        tool_choice: enableWriteTools ? "auto" : "none",
       }),
     });
 
@@ -755,7 +756,16 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       
       for (const toolCall of assistantMessage.tool_calls) {
         const toolName = toolCall.function.name;
-        const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+        let toolArgs = {};
+        
+        // Safely parse tool arguments with error handling
+        try {
+          toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+        } catch (parseError) {
+          console.error(`Failed to parse tool arguments for ${toolName}:`, toolCall.function.arguments);
+          // Skip this malformed tool call
+          continue;
+        }
         
         console.log(`Executing tool: ${toolName}`, toolArgs);
         toolsCalled.push(toolName);
@@ -768,6 +778,11 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
           tool_call_id: toolCall.id,
           content: JSON.stringify(result)
         });
+      }
+      
+      // Only continue if we have tool results
+      if (toolResults.length === 0) {
+        break;
       }
       
       const updatedMessages = [
@@ -785,7 +800,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           messages: updatedMessages,
-          tools: agentTools,
+          tools: activeTools.length > 0 ? activeTools : undefined,
           tool_choice: "auto",
         }),
       });
@@ -793,6 +808,7 @@ SAFETY: If the user expresses suicidal thoughts or immediate danger, prioritize 
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
         console.error("Groq API error in tool loop:", aiResponse.status, errorText);
+        // If tool loop fails, use what we have
         break;
       }
       
