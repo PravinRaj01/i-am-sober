@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import OpikBadge from "@/components/OpikBadge";
 import { 
   Activity, 
   Brain, 
@@ -120,17 +121,20 @@ const AIObservability = () => {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40 shadow-soft">
-        <div className="px-4 sm:px-6 py-4 flex items-center gap-4">
-          <SidebarTrigger className="lg:hidden" />
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-primary">
-              <Activity className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">AI Observability</h1>
-              <p className="text-sm text-muted-foreground">Monitor AI agent performance & decisions</p>
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="lg:hidden" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-primary">
+                <Activity className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">AI Observability</h1>
+                <p className="text-sm text-muted-foreground">Monitor AI agent performance & decisions</p>
+              </div>
             </div>
           </div>
+          <OpikBadge />
         </div>
       </header>
 
