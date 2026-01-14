@@ -87,3 +87,6 @@ verify_jwt = true
 
 [functions.analyze-biometrics]
 verify_jwt = true
+
+[functions.check-admin-status]
+verify_jwt = false
