@@ -1,51 +1,91 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle, LogOut } from "lucide-react";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
+/**
+ * Admin Layout - Protects admin routes
+ * 
+ * SECURITY: Uses server-side validation via edge function.
+ * Any logged-in user (regular or admin) who tries to access /admin
+ * will be signed out if they're not an admin, then redirected to /admin/login.
+ */
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { isAdmin, isLoading, error } = useAdminAuth();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Check if user is logged in at all
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+    const checkAdminAccess = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // No session at all - redirect to admin login
+        if (!session) {
+          navigate("/admin/login", { replace: true });
+          return;
+        }
+
+        // Has session - verify admin status via edge function
+        const response = await fetch(
+          `https://jivpbjhroujuoatdqtpx.supabase.co/functions/v1/check-admin-status`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${session.access_token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to verify admin status");
+        }
+
+        const data = await response.json();
+        
+        if (!data.isAdmin) {
+          // User is logged in but NOT an admin
+          // Sign them out completely, then redirect to admin login
+          await supabase.auth.signOut();
+          navigate("/admin/login", { replace: true });
+          return;
+        }
+
+        // User is verified admin
+        setIsAdmin(true);
+      } catch (err: any) {
+        console.error("Admin access check failed:", err);
+        setError(err.message || "Access verification failed");
+        // On error, sign out and redirect
+        await supabase.auth.signOut();
+        navigate("/admin/login", { replace: true });
+      } finally {
+        setIsLoading(false);
+      }
     };
-    checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setIsAuthenticated(!!session);
-    });
+    checkAdminAccess();
+  }, [navigate]);
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Redirect to admin login if not authenticated
-  useEffect(() => {
-    if (isAuthenticated === false) {
-      navigate("/admin/login", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  // Redirect to admin login if authenticated but not admin
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && !isAdmin) {
-      navigate("/admin/login", { replace: true });
-    }
-  }, [isAdmin, isLoading, isAuthenticated, navigate]);
+  // Handle logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/admin/login", { replace: true });
+  };
 
   // Loading state
-  if (isLoading || isAuthenticated === null) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -79,14 +119,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // Not authenticated or not admin (will redirect)
-  if (!isAuthenticated || !isAdmin) {
+  // Not admin (will redirect, but render nothing while redirecting)
+  if (!isAdmin) {
     return null;
   }
 
   return (
     <div className="min-h-screen flex w-full bg-background">
-      <AdminSidebar />
+      <AdminSidebar onLogout={handleLogout} />
       <main className="flex-1 overflow-auto">
         {children}
       </main>

@@ -39,10 +39,10 @@ const AppContent = () => {
       <Route path="/onboarding" element={<OnboardingWizard />} />
       <Route path="/install" element={<Install />} />
 
-      {/* Admin login - separate from admin layout */}
+      {/* Admin login - completely separate, no layout */}
       <Route path="/admin/login" element={
         <Suspense fallback={
-          <div className="flex items-center justify-center h-screen">
+          <div className="flex items-center justify-center h-screen bg-background">
             <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
         }>
@@ -50,8 +50,8 @@ const AppContent = () => {
         </Suspense>
       } />
 
-      {/* Admin routes - separate layout */}
-      <Route path="/admin/*" element={
+      {/* Admin dashboard - protected by AdminLayout */}
+      <Route path="/admin" element={
         <AdminLayout>
           <Suspense fallback={
             <div className="flex items-center justify-center h-screen">
@@ -61,11 +61,7 @@ const AppContent = () => {
               </div>
             </div>
           }>
-            <Routes>
-              <Route index element={<AdminPanel />} />
-              {/* Future admin routes: /admin/ai-analytics, /admin/errors, etc. */}
-              <Route path="*" element={<AdminPanel />} />
-            </Routes>
+            <AdminPanel />
           </Suspense>
         </AdminLayout>
       } />
