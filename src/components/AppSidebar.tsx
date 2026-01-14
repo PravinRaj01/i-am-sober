@@ -36,6 +36,17 @@ export function AppSidebar() {
   const { state, toggleSidebar, open, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isDevUnlocked, setIsDevUnlocked] = useState(false);
+
+  // Check dev tools unlock state
+  useEffect(() => {
+    const checkUnlock = () => {
+      setIsDevUnlocked(localStorage.getItem('devToolsUnlocked') === 'true');
+    };
+    checkUnlock();
+    window.addEventListener('storage', checkUnlock);
+    return () => window.removeEventListener('storage', checkUnlock);
+  }, []);
 
   // Fetch logo from storage
   useEffect(() => {
@@ -129,7 +140,15 @@ export function AppSidebar() {
         
         <nav className="flex-1 py-4 px-2 overflow-y-auto">
           <ul className="space-y-1">
-            {menuItems.map((item) => (
+            {menuItems
+              .filter(item => {
+                // Hide AI Developer unless unlocked
+                if (item.url === '/ai-observability') {
+                  return isDevUnlocked;
+                }
+                return true;
+              })
+              .map((item) => (
               <li key={item.title}>
                 <NavLink
                   to={item.url}

@@ -31,7 +31,8 @@ const ChatbotMiniView = ({
   onQuickAction,
   onClose,
 }: ChatbotMiniViewProps) => {
-  const lastTwoMessages = messages?.slice(-2) || [];
+  // Show more messages for scrolling
+  const displayMessages = messages || [];
 
   const TypingIndicator = () => (
     <div className="flex items-center gap-2 p-2">
@@ -105,44 +106,46 @@ const ChatbotMiniView = ({
         </div>
       </CardHeader>
 
-      <CardContent className="flex flex-col h-[calc(100%-5rem)] pt-0">
-        {/* Message Preview */}
-        <div className="flex-1 space-y-2 overflow-y-auto mb-2 pr-2">
-          {lastTwoMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full space-y-3">
-              <Avatar className="h-12 w-12 border-2 border-primary/20 bg-card shadow-glow">
-                <StorageImage
-                  bucket="logos"
-                  path="logo.png"
-                  alt="Bot"
-                  className="h-full w-full object-contain p-1.5"
-                  fallback={
-                    <AvatarFallback className="bg-gradient-primary">
-                      <Bot className="h-6 w-6 text-primary-foreground" />
-                    </AvatarFallback>
-                  }
-                />
-              </Avatar>
-              <div className="text-center">
-                <p className="text-sm font-semibold mb-1">Hi there! 👋</p>
-                <p className="text-xs text-muted-foreground">How can I support you?</p>
+      <CardContent className="flex flex-col h-[calc(100%-5rem)] pt-0 overflow-hidden">
+        {/* Message Area - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto mb-2 pr-1 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+          <div className="space-y-2 py-1">
+            {displayMessages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full min-h-[200px] space-y-3">
+                <Avatar className="h-12 w-12 border-2 border-primary/20 bg-card shadow-glow">
+                  <StorageImage
+                    bucket="logos"
+                    path="logo.png"
+                    alt="Bot"
+                    className="h-full w-full object-contain p-1.5"
+                    fallback={
+                      <AvatarFallback className="bg-gradient-primary">
+                        <Bot className="h-6 w-6 text-primary-foreground" />
+                      </AvatarFallback>
+                    }
+                  />
+                </Avatar>
+                <div className="text-center">
+                  <p className="text-sm font-semibold mb-1">Hi there! 👋</p>
+                  <p className="text-xs text-muted-foreground">How can I support you?</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <>
-              {lastTwoMessages.map((msg) => (
-                <ChatMessage key={msg.id} role={msg.role} content={msg.content} compact />
-              ))}
-              {streaming && streamingMessage && (
-                <ChatMessage
-                  role="assistant"
-                  content={streamingMessage}
-                  isStreaming
-                  compact
-                />
-              )}
-            </>
-          )}
+            ) : (
+              <>
+                {displayMessages.map((msg) => (
+                  <ChatMessage key={msg.id} role={msg.role} content={msg.content} compact />
+                ))}
+                {streaming && streamingMessage && (
+                  <ChatMessage
+                    role="assistant"
+                    content={streamingMessage}
+                    isStreaming
+                    compact
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {streaming && !streamingMessage && <TypingIndicator />}

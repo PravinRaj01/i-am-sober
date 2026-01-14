@@ -39,6 +39,7 @@ const Settings = () => {
   const [pseudonym, setPseudonym] = useState("");
   const [addictionType, setAddictionType] = useState<string>("");
   const [konamiProgress, setKonamiProgress] = useState<string[]>([]);
+  const [konamiIndicator, setKonamiIndicator] = useState<number>(0);
   
   // Notification settings
   const [dailyReminder, setDailyReminder] = useState(true);
@@ -61,23 +62,27 @@ const Settings = () => {
     setKonamiProgress(prev => {
       const newProgress = [...prev, key].slice(-10);
       
-      // Check if the sequence matches
-      const isMatch = newProgress.every((k, i) => k === KONAMI_CODE[i]);
+      // Check if the sequence matches so far
+      const isOnTrack = newProgress.every((k, i) => k === KONAMI_CODE[i]);
       
-      if (isMatch && newProgress.length === KONAMI_CODE.length) {
+      if (!isOnTrack) {
+        setKonamiIndicator(0);
+        return [];
+      }
+      
+      // Update visual indicator
+      setKonamiIndicator(newProgress.length);
+      
+      if (newProgress.length === KONAMI_CODE.length) {
         // Konami code complete!
         localStorage.setItem('devToolsUnlocked', 'true');
+        window.dispatchEvent(new Event('storage')); // Notify sidebar
         toast({
           title: "🎮 Developer Mode Unlocked!",
           description: "You found the secret! AI Observability is now accessible.",
         });
+        setKonamiIndicator(0);
         navigate('/ai-observability');
-        return [];
-      }
-      
-      // Check if still on track
-      const isOnTrack = newProgress.every((k, i) => k === KONAMI_CODE[i]);
-      if (!isOnTrack) {
         return [];
       }
       
@@ -503,9 +508,33 @@ const Settings = () => {
             </Alert>
             
             {/* Hidden hint for developers */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground/50 mt-4">
-              <Gamepad2 className="h-3 w-3" />
-              <span>Old school gamers might find something special here... ↑↑↓↓←→←→</span>
+            <div className="flex flex-col gap-2 mt-4 p-3 rounded-lg border border-dashed border-muted-foreground/20 bg-muted/30">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Gamepad2 className="h-4 w-4" />
+                <span className="font-medium">Easter Egg:</span>
+                <span>Old school gamers might find something special here... ↑↑↓↓←→←→BA</span>
+              </div>
+              
+              {/* Konami progress indicator */}
+              {konamiIndicator > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {KONAMI_CODE.map((_, idx) => (
+                      <div 
+                        key={idx}
+                        className={`h-2 w-2 rounded-full transition-all duration-200 ${
+                          idx < konamiIndicator 
+                            ? 'bg-primary scale-110' 
+                            : 'bg-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-primary animate-pulse">
+                    {konamiIndicator}/10 - Keep going!
+                  </span>
+                </div>
+              )}
             </div>
             
             {/* Show dev tools link if unlocked */}

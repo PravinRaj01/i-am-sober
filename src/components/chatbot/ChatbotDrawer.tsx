@@ -135,26 +135,38 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
     const messageToSend = message || input.trim();
     if (!messageToSend || streaming || !currentConversationId) return;
 
+    const userInput = messageToSend;
     setInput("");
     setStreaming(true);
     setStreamingMessage("");
 
-    let accumulatedResponse = "";
-
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       // Immediately add user message to UI
       const userMessage = {
-        id: `temp-${Date.now()}`,
+        id: `temp-user-${Date.now()}`,
         role: "user",
-        content: messageToSend,
+        content: userInput,
         created_at: new Date().toISOString(),
         conversation_id: currentConversationId,
-        user_id: (await supabase.auth.getUser()).data.user?.id || "",
+        user_id: user.id,
       };
 
-      queryClient.setQueryData(["chat-messages", currentConversationId], (old: any) => [...(old || []), userMessage]);
+      // Get current messages BEFORE adding optimistic update
+      const currentMessages = queryClient.getQueryData<any[]>(["chat-messages", currentConversationId]) || [];
+      
+      queryClient.setQueryData(["chat-messages", currentConversationId], [...currentMessages, userMessage]);
 
-      await saveMessageMutation.mutateAsync({ role: "user", content: messageToSend });
+      // Save user message to DB
+      await saveMessageMutation.mutateAsync({ role: "user", content: userInput });
+
+      // Build conversation history from EXISTING messages (not including the one we just added)
+      const conversationHistory = currentMessages.map(m => ({ 
+        role: m.role, 
+        content: m.content 
+      }));
 
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
@@ -166,8 +178,8 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            message: messageToSend,
-            conversationHistory: messages?.map(m => ({ role: m.role, content: m.content })),
+            message: userInput,
+            conversationHistory: conversationHistory,
           }),
         }
       );
@@ -183,7 +195,7 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
         throw new Error(errorData.error || "Failed to get AI response");
       }
 
-      // Parse JSON response (not SSE streaming)
+      // Parse JSON response
       const data = await response.json();
       const aiResponse = data.response || data.choices?.[0]?.message?.content || "";
       const toolsUsed = data.tools_used || [];
@@ -191,14 +203,22 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
       if (aiResponse) {
         // Save assistant message with metadata
         await supabase.from("chat_messages").insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id || "",
+          user_id: user.id,
           conversation_id: currentConversationId,
           role: "assistant",
           content: aiResponse,
           metadata: { tools_used: toolsUsed, response_time_ms: data.response_time_ms }
         });
         
+        // Refresh messages from DB to ensure sync
         queryClient.invalidateQueries({ queryKey: ["chat-messages", currentConversationId] });
+        
+        // Also invalidate goals/check-ins if tools were used
+        if (toolsUsed.length > 0) {
+          queryClient.invalidateQueries({ queryKey: ["goals"] });
+          queryClient.invalidateQueries({ queryKey: ["check-ins"] });
+          queryClient.invalidateQueries({ queryKey: ["journal-entries"] });
+        }
       }
     } catch (error: any) {
       toast({
@@ -206,6 +226,8 @@ const ChatbotDrawer = ({ state, onStateChange }: ChatbotDrawerProps) => {
         description: error.message,
         variant: "destructive",
       });
+      // Refresh messages on error to restore correct state
+      queryClient.invalidateQueries({ queryKey: ["chat-messages", currentConversationId] });
     } finally {
       setStreaming(false);
       setStreamingMessage("");
