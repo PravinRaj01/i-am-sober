@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Dashboard from "./pages/Dashboard";
@@ -46,7 +46,11 @@ const AppContent = () => {
                   <Route path="/achievements" element={<Achievements />} />
                   <Route path="/community" element={<Community />} />
                   <Route path="/wearables" element={<WearableData />} />
-                  <Route path="/ai-observability" element={<AIObservability />} />
+                  <Route path="/ai-observability" element={
+                    localStorage.getItem('devToolsUnlocked') === 'true' 
+                      ? <AIObservability /> 
+                      : <Navigate to="/settings" replace />
+                  } />
                   <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
