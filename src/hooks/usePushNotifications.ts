@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// VAPID public key would be stored here - for demo purposes
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY';
+// VAPID public key - this is the PUBLIC key, safe to expose in client code
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 
 export const usePushNotifications = () => {
   const [isSupported, setIsSupported] = useState(false);
@@ -86,6 +86,7 @@ export const usePushNotifications = () => {
 
       // Get subscription keys
       const subscriptionJson = subscription.toJSON();
+      const keys = subscriptionJson.keys || {};
       
       // Save to Supabase
       const { data: { user } } = await supabase.auth.getUser();
@@ -93,9 +94,24 @@ export const usePushNotifications = () => {
         throw new Error('Not authenticated');
       }
 
-      // Note: You would need to create a push_subscriptions table
-      // This is a placeholder for the subscription storage logic
-      console.log('Push subscription:', subscriptionJson);
+      // Save subscription to database using raw query to avoid type issues
+      // The push_subscriptions table was just created
+      const { error } = await supabase
+        .from('push_subscriptions' as any)
+        .upsert({
+          user_id: user.id,
+          endpoint: subscriptionJson.endpoint,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving subscription:', error);
+        throw new Error('Failed to save subscription');
+      }
 
       setIsSubscribed(true);
       toast({
@@ -126,6 +142,15 @@ export const usePushNotifications = () => {
 
       if (subscription) {
         await subscription.unsubscribe();
+      }
+
+      // Remove from database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('push_subscriptions' as any)
+          .delete()
+          .eq('user_id', user.id);
       }
 
       setIsSubscribed(false);

@@ -486,23 +486,23 @@ const Settings = () => {
               AI Features
             </CardTitle>
             <CardDescription>
-              AI-powered insights and support
+              Agentic AI recovery companion
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                This app uses Lovable AI (powered by Google Gemini) for AI features including:
+                Your AI companion can take actions on your behalf:
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>AI chatbot support</li>
-                  <li>Motivational messages</li>
-                  <li>Goal suggestions</li>
-                  <li>Coping strategies</li>
-                  <li>Journal sentiment analysis</li>
+                  <li><strong>Create goals</strong> - Just tell the AI your goals</li>
+                  <li><strong>Log check-ins</strong> - Share how you're feeling</li>
+                  <li><strong>Write journal entries</strong> - Speak your thoughts</li>
+                  <li><strong>Track coping activities</strong> - Mention what helps you</li>
+                  <li><strong>Analyze your progress</strong> - Ask about your journey</li>
                 </ul>
-                <p className="mt-2 text-sm font-medium">
-                  ✨ All Gemini models are free to use during the promotional period (Sept 29 - Oct 13, 2025).
+                <p className="mt-2 text-sm text-muted-foreground">
+                  The AI reads your data to give personalized support and can take action when you ask.
                 </p>
               </AlertDescription>
             </Alert>
@@ -512,7 +512,7 @@ const Settings = () => {
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Gamepad2 className="h-4 w-4" />
                 <span className="font-medium">Easter Egg:</span>
-                <span>Old school gamers might find something special here... ↑↑↓↓←→←→BA</span>
+                <span>Try the Konami code...</span>
               </div>
               
               {/* Konami progress indicator */}
@@ -537,16 +537,59 @@ const Settings = () => {
               )}
             </div>
             
-            {/* Show dev tools link if unlocked */}
+            {/* Show dev tools controls if unlocked */}
             {isDevUnlocked && (
-              <Button 
-                variant="outline" 
-                className="w-full mt-2"
-                onClick={() => navigate('/ai-observability')}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Open AI Observability Dashboard
-              </Button>
+              <div className="space-y-3 pt-2 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-medium">AI Observability Dashboard</Label>
+                    <p className="text-xs text-muted-foreground">Monitor AI interactions and performance</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/ai-observability')}
+                  >
+                    Open
+                  </Button>
+                </div>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-xs text-muted-foreground hover:text-destructive w-full justify-start"
+                    >
+                      Disable AI Observability access
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Disable AI Observability?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will hide the AI Observability page from the sidebar. To re-enable it, you'll need to enter the Konami code again in Settings.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                      <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          localStorage.removeItem('devToolsUnlocked');
+                          window.dispatchEvent(new Event('storage'));
+                          toast({
+                            title: "AI Observability disabled",
+                            description: "Enter the Konami code to unlock it again.",
+                          });
+                        }}
+                        className="w-full sm:w-auto"
+                      >
+                        Disable
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </CardContent>
         </Card>

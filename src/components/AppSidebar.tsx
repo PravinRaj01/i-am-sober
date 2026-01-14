@@ -27,7 +27,7 @@ const menuItems = [
   { title: "Achievements", url: "/achievements", icon: Trophy },
   { title: "Wearables", url: "/wearables", icon: Watch },
   { title: "Recovery Insights", url: "/ai-recovery-insights", icon: Sparkles },
-  { title: "AI Developer", url: "/ai-observability", icon: Brain },
+  { title: "AI Observability", url: "/ai-observability", icon: Brain },
   { title: "Community", url: "/community", icon: Users },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
