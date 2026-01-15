@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import CheckIn from "./pages/CheckIn";
@@ -44,6 +44,19 @@ const AdminLoader = () => (
 );
 
 const AppContent = () => {
+  // Track dev tools unlock state reactively
+  const [isDevUnlocked, setIsDevUnlocked] = useState(() => 
+    localStorage.getItem('devToolsUnlocked') === 'true'
+  );
+
+  useEffect(() => {
+    const checkUnlock = () => {
+      setIsDevUnlocked(localStorage.getItem('devToolsUnlocked') === 'true');
+    };
+    window.addEventListener('storage', checkUnlock);
+    return () => window.removeEventListener('storage', checkUnlock);
+  }, []);
+
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />
@@ -73,7 +86,7 @@ const AppContent = () => {
                 <Route path="/achievements" element={<Achievements />} />
                 <Route path="/community" element={<Community />} />
                 <Route path="/wearables" element={<WearableData />} />
-                <Route path="/ai-observability" element={localStorage.getItem('devToolsUnlocked') === 'true' ? <AIObservability /> : <Navigate to="/settings" replace />} />
+                <Route path="/ai-observability" element={isDevUnlocked ? <AIObservability /> : <Navigate to="/settings" replace />} />
                 <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
                 <Route path="/ai-agent" element={<AIAgent />} />
                 <Route path="/settings" element={<Settings />} />
