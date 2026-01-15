@@ -11,9 +11,13 @@ import { ProgressCharts } from "@/components/progress/ProgressCharts";
 import BiometricTrendsChart from "@/components/BiometricTrendsChart";
 import { PageHeader } from "@/components/layout/PageHeader";
 
+const RELAPSES_PER_PAGE = 5;
+
 const Progress = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [relapseDialogOpen, setRelapseDialogOpen] = useState(false);
+  const [relapseCurrentPage, setRelapseCurrentPage] = useState(1);
 
   const { data: checkIns } = useQuery({
     queryKey: ["progress-check-ins"],
@@ -66,8 +70,9 @@ const Progress = () => {
     },
   });
 
-  const { data: relapses } = useQuery({
-    queryKey: ["progress-relapses"],
+  // Fetch all relapses for the dialog with pagination
+  const { data: allRelapses } = useQuery({
+    queryKey: ["progress-all-relapses"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -76,13 +81,21 @@ const Progress = () => {
         .from("relapses")
         .select("*")
         .eq("user_id", user.id)
-        .order("relapse_date", { ascending: false })
-        .limit(5);
+        .order("relapse_date", { ascending: false });
 
       if (error) throw error;
       return data;
     },
   });
+
+  // Get latest relapse for summary view
+  const latestRelapse = allRelapses?.[0];
+  const totalRelapses = allRelapses?.length || 0;
+  const totalRelapsePages = Math.ceil(totalRelapses / RELAPSES_PER_PAGE);
+  const paginatedRelapses = allRelapses?.slice(
+    (relapseCurrentPage - 1) * RELAPSES_PER_PAGE,
+    relapseCurrentPage * RELAPSES_PER_PAGE
+  ) || [];
 
   // Calendar heatmap
   const monthDays = eachDayOfInterval({
@@ -94,7 +107,7 @@ const Progress = () => {
     const hasCheckIn = checkIns?.some((checkIn) =>
       isSameDay(new Date(checkIn.created_at), day)
     );
-    const hasRelapse = relapses?.some((relapse) =>
+    const hasRelapse = allRelapses?.some((relapse) =>
       isSameDay(new Date(relapse.relapse_date), day)
     );
     const dayGoals = goals?.filter(
@@ -115,7 +128,7 @@ const Progress = () => {
     const dayJournal = journalEntries?.filter((j) =>
       isSameDay(new Date(j.created_at), day)
     );
-    const dayRelapses = relapses?.filter((r) =>
+    const dayRelapses = allRelapses?.filter((r) =>
       isSameDay(new Date(r.relapse_date), day)
     );
     const dayGoals = goals?.filter(
@@ -263,34 +276,49 @@ const Progress = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Relapses */}
-        {relapses && relapses.length > 0 && (
+        {/* Latest Relapse */}
+        {latestRelapse && (
           <Card className="bg-card/50 backdrop-blur-lg border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                Relapse History
+                Latest Relapse
               </CardTitle>
               <CardDescription>Learning from setbacks</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {relapses.map((relapse) => (
-                  <div
-                    key={relapse.id}
-                    className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{format(new Date(relapse.relapse_date), "PPP")}</p>
-                        {relapse.notes && (
-                          <p className="text-sm text-muted-foreground mt-1">{relapse.notes}</p>
-                        )}
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{format(new Date(latestRelapse.relapse_date), "PPP")}</p>
+                    {latestRelapse.notes && (
+                      <p className="text-sm text-muted-foreground mt-1">{latestRelapse.notes}</p>
+                    )}
+                    {latestRelapse.triggers && latestRelapse.triggers.length > 0 && (
+                      <div className="flex gap-1 flex-wrap mt-2">
+                        {latestRelapse.triggers.map((trigger: string, idx: number) => (
+                          <Badge key={idx} variant="destructive" className="text-xs">
+                            {trigger}
+                          </Badge>
+                        ))}
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
+                </div>
               </div>
+              
+              {totalRelapses > 1 && (
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setRelapseCurrentPage(1);
+                    setRelapseDialogOpen(true);
+                  }}
+                >
+                  See All Relapses ({totalRelapses})
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
@@ -436,6 +464,67 @@ const Progress = () => {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Relapse History Dialog */}
+      <Dialog open={relapseDialogOpen} onOpenChange={setRelapseDialogOpen}>
+        <DialogContent className="bg-card/90 backdrop-blur-2xl border-border/40 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Relapse History
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {paginatedRelapses.map((relapse) => (
+              <div
+                key={relapse.id}
+                className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg"
+              >
+                <p className="font-medium">{format(new Date(relapse.relapse_date), "PPP")}</p>
+                {relapse.notes && (
+                  <p className="text-sm text-muted-foreground mt-1">{relapse.notes}</p>
+                )}
+                {relapse.triggers && relapse.triggers.length > 0 && (
+                  <div className="flex gap-1 flex-wrap mt-2">
+                    {relapse.triggers.map((trigger: string, idx: number) => (
+                      <Badge key={idx} variant="destructive" className="text-xs">
+                        {trigger}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {totalRelapsePages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRelapseCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={relapseCurrentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {relapseCurrentPage} of {totalRelapsePages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRelapseCurrentPage((p) => Math.min(totalRelapsePages, p + 1))}
+                disabled={relapseCurrentPage === totalRelapsePages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

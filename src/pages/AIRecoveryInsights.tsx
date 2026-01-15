@@ -284,7 +284,7 @@ export default function AIRecoveryInsights() {
             <CardContent>
               {aiStats?.logs && aiStats.logs.length > 0 ? (
                 <div className="space-y-3">
-                  {aiStats.logs.slice(0, 10).map((log: any) => (
+                  {aiStats.logs.slice(0, 5).map((log: any) => (
                     <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                       <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                         <Brain className="h-4 w-4 text-primary" />

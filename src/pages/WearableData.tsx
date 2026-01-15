@@ -350,7 +350,7 @@ export default function WearableData() {
           </Card>
 
           <Tabs defaultValue="manual" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="manual">Manual Entry</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
