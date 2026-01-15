@@ -18,7 +18,6 @@ import Settings from "./pages/Settings";
 import Community from "./pages/Community";
 import WearableData from "./pages/WearableData";
 import AIObservability from "./pages/AIObservability";
-import AIRecoveryInsights from "./pages/AIRecoveryInsights";
 import AIAgent from "./pages/AIAgent";
 import Install from "./pages/Install";
 import { OnboardingWizard } from "./components/OnboardingWizard";
@@ -87,8 +86,8 @@ const AppContent = () => {
                 <Route path="/community" element={<Community />} />
                 <Route path="/wearables" element={<WearableData />} />
                 <Route path="/ai-observability" element={isDevUnlocked ? <AIObservability /> : <Navigate to="/settings" replace />} />
-                <Route path="/ai-recovery-insights" element={<AIRecoveryInsights />} />
                 <Route path="/ai-agent" element={<AIAgent />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

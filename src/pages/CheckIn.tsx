@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Flame } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 const moods = [
@@ -26,6 +27,23 @@ const CheckIn = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Fetch current streak
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ["check-in-profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("current_streak, longest_streak")
+        .eq("id", user.id)
+        .single();
+      
+      return data;
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -35,18 +53,18 @@ const CheckIn = () => {
       if (!user) throw new Error("Not authenticated");
 
       // Start a transaction to handle check-in, XP, and achievements
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("current_streak, longest_streak, last_check_in, xp")
         .eq("id", user.id)
         .single();
 
-      if (!profile) throw new Error("Profile not found");
+      if (!profileData) throw new Error("Profile not found");
 
       // Calculate streaks
       let newCurrentStreak = 1;
-      let newLongestStreak = profile.longest_streak || 1;
-      const lastCheckIn = profile.last_check_in ? new Date(profile.last_check_in) : null;
+      let newLongestStreak = profileData.longest_streak || 1;
+      const lastCheckIn = profileData.last_check_in ? new Date(profileData.last_check_in) : null;
       
       if (lastCheckIn) {
         const daysSinceLastCheckIn = Math.floor(
@@ -55,8 +73,8 @@ const CheckIn = () => {
 
         if (daysSinceLastCheckIn === 1) {
           // Consecutive day
-          newCurrentStreak = (profile.current_streak || 0) + 1;
-          newLongestStreak = Math.max(newCurrentStreak, profile.longest_streak || 0);
+          newCurrentStreak = (profileData.current_streak || 0) + 1;
+          newLongestStreak = Math.max(newCurrentStreak, profileData.longest_streak || 0);
         } else if (daysSinceLastCheckIn > 1) {
           // Streak broken
           newCurrentStreak = 1;
@@ -82,7 +100,7 @@ const CheckIn = () => {
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          xp: (profile.xp || 0) + totalXP,
+          xp: (profileData.xp || 0) + totalXP,
           current_streak: newCurrentStreak,
           longest_streak: newLongestStreak,
           last_check_in: new Date().toISOString(),
@@ -116,6 +134,7 @@ const CheckIn = () => {
         title: "Check-in saved!",
         description: `+${totalXP} XP (${baseXP} base + ${streakBonus} streak bonus). Current streak: ${newCurrentStreak} days!`,
       });
+      refetchProfile();
       navigate("/");
     } catch (error: any) {
       toast({
@@ -132,7 +151,25 @@ const CheckIn = () => {
     <div className="flex-1 bg-gradient-calm min-h-screen">
       <PageHeader title="Check In" />
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl animate-fade-in">
+      <main className="container mx-auto px-4 py-8 max-w-2xl animate-fade-in space-y-6">
+        {/* Check-in Streak Card */}
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Check-in Streak</p>
+                <p className="text-3xl font-bold text-primary">{profile?.current_streak || 0} days</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {profile?.longest_streak ? `Best: ${profile.longest_streak} days` : "Keep the streak going!"}
+                </p>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                <Flame className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-soft bg-card/50 backdrop-blur-lg">
           <CardHeader>
             <CardTitle>Daily Check-In</CardTitle>
