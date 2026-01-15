@@ -219,7 +219,7 @@ export default function AIRecoveryInsights() {
               {profile && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">Current Streak</p>
+                    <p className="text-xs text-muted-foreground">Check-in Streak</p>
                     <p className="text-2xl font-bold text-primary">{profile.current_streak || 0} days</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
