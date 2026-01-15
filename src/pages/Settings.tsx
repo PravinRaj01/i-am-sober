@@ -274,6 +274,14 @@ const Settings = () => {
       if (!user) throw new Error("Not authenticated");
 
       // Reset all user data but keep the account
+      // Delete data from child tables first (foreign key constraints)
+      await Promise.all([
+        supabase.from("community_comments").delete().eq("user_id", user.id),
+        supabase.from("community_reactions").delete().eq("user_id", user.id),
+        supabase.from("goal_completions").delete().eq("user_id", user.id),
+      ]);
+      
+      // Now delete from parent tables and reset profile
       await Promise.all([
         // Reset profile to defaults
         supabase.from("profiles").update({
@@ -284,6 +292,7 @@ const Settings = () => {
           points: 0,
           sobriety_start_date: new Date().toISOString(),
           last_check_in: null,
+          onboarding_completed: false,
         }).eq("id", user.id),
         
         // Delete all user data
@@ -299,6 +308,12 @@ const Settings = () => {
         supabase.from("community_interactions").delete().eq("user_id", user.id),
         supabase.from("chat_messages").delete().eq("user_id", user.id),
         supabase.from("conversations").delete().eq("user_id", user.id),
+        supabase.from("biometric_logs").delete().eq("user_id", user.id),
+        supabase.from("ai_interventions").delete().eq("user_id", user.id),
+        supabase.from("ai_observability_logs").delete().eq("user_id", user.id),
+        supabase.from("supporters").delete().eq("user_id", user.id),
+        supabase.from("push_subscriptions").delete().eq("user_id", user.id),
+        supabase.from("online_members").delete().eq("user_id", user.id),
       ]);
 
       // Invalidate all queries
@@ -327,7 +342,14 @@ const Settings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Delete all user data first
+      // Delete all user data first (child tables with foreign keys)
+      await Promise.all([
+        supabase.from("community_comments").delete().eq("user_id", user.id),
+        supabase.from("community_reactions").delete().eq("user_id", user.id),
+        supabase.from("goal_completions").delete().eq("user_id", user.id),
+      ]);
+
+      // Then delete parent tables
       await Promise.all([
         supabase.from("check_ins").delete().eq("user_id", user.id),
         supabase.from("journal_entries").delete().eq("user_id", user.id),
@@ -342,6 +364,11 @@ const Settings = () => {
         supabase.from("community_interactions").delete().eq("user_id", user.id),
         supabase.from("chat_messages").delete().eq("user_id", user.id),
         supabase.from("conversations").delete().eq("user_id", user.id),
+        supabase.from("biometric_logs").delete().eq("user_id", user.id),
+        supabase.from("ai_interventions").delete().eq("user_id", user.id),
+        supabase.from("ai_observability_logs").delete().eq("user_id", user.id),
+        supabase.from("push_subscriptions").delete().eq("user_id", user.id),
+        supabase.from("online_members").delete().eq("user_id", user.id),
         supabase.from("profiles").delete().eq("id", user.id),
       ]);
 
