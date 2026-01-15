@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, User, Shield, LogOut, Sparkles, Info, RefreshCw, Trash2, AlertTriangle, Gamepad2 } from "lucide-react";
+import { Bell, User, Shield, LogOut, Sparkles, Info, RefreshCw, Trash2, AlertTriangle, Gamepad2, CheckCircle2, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useBackground } from "@/contexts/BackgroundContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/layout/PageHeader";
 import SidebarOrderEditor from "@/components/SidebarOrderEditor";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,9 @@ const Settings = () => {
   const [shareJournal, setShareJournal] = useState(false);
   const [shareCheckIns, setShareCheckIns] = useState(false);
   const [shareMilestones, setShareMilestones] = useState(true);
+
+  // Push notifications hook
+  const { isSupported, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
 
   // Check if dev tools are unlocked
   const isDevUnlocked = localStorage.getItem('devToolsUnlocked') === 'true';
@@ -282,27 +286,11 @@ const Settings = () => {
     }
   };
 
-  const requestNotificationPermission = async () => {
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        toast({
-          title: "Notifications enabled!",
-          description: "You'll receive reminders and updates.",
-        });
-      } else {
-        toast({
-          title: "Notifications denied",
-          description: "You can enable them in your browser settings.",
-          variant: "destructive",
-        });
-      }
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
     } else {
-      toast({
-        title: "Not supported",
-        description: "Your browser doesn't support notifications.",
-        variant: "destructive",
-      });
+      await subscribe();
     }
   };
 
@@ -438,9 +426,59 @@ const Settings = () => {
               <Switch checked={supporterUpdates} onCheckedChange={setSupporterUpdates} />
             </div>
 
-            <Button onClick={requestNotificationPermission} variant="outline" className="w-full">
-              Enable Browser Notifications
-            </Button>
+            <Separator />
+
+            {/* Push Notifications Toggle */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-2">
+                    Push Notifications
+                    {isSubscribed && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {isSupported 
+                      ? "Receive proactive AI check-ins and reminders" 
+                      : "Not supported in this browser"}
+                  </p>
+                </div>
+                <Switch 
+                  checked={isSubscribed} 
+                  onCheckedChange={handlePushToggle}
+                  disabled={!isSupported || pushLoading}
+                />
+              </div>
+              
+              {isSupported && !isSubscribed && (
+                <Button 
+                  onClick={subscribe} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={pushLoading}
+                >
+                  {pushLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enabling...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="mr-2 h-4 w-4" />
+                      Enable Push Notifications
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {isSubscribed && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  <p className="text-sm text-primary">
+                    Push notifications are enabled. You'll receive AI check-ins and reminders.
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

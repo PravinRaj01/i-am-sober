@@ -90,3 +90,9 @@ verify_jwt = true
 
 [functions.check-admin-status]
 verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.fitbit-auth]
+verify_jwt = false

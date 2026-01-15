@@ -299,6 +299,35 @@ serve(async (req) => {
       intervention_type: riskSignals[0]?.type
     });
 
+    // Send push notification to user
+    try {
+      const pushResponse = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          title: "💙 Recovery Check-in",
+          body: aiMessage.substring(0, 100) + (aiMessage.length > 100 ? "..." : ""),
+          url: "/ai-insights",
+          data: {
+            type: "proactive_intervention",
+            intervention_id: intervention?.id,
+            risk_score: riskScore,
+          }
+        }),
+      });
+      
+      if (pushResponse.ok) {
+        console.log("Push notification sent for intervention:", intervention?.id);
+      }
+    } catch (pushError) {
+      console.error("Failed to send push notification:", pushError);
+      // Don't fail the whole request if push fails
+    }
+
     return new Response(JSON.stringify({
       needs_intervention: true,
       intervention,

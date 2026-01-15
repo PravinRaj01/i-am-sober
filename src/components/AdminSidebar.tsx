@@ -21,22 +21,32 @@ const analyticsItems = [
 ];
 
 export function AdminSidebar({ onLogout, isMobileOpen = false, onMobileClose }: AdminSidebarProps) {
-  const [isManuallyCollapsed, setIsManuallyCollapsed] = useState(false);
+  const [isManuallyCollapsed, setIsManuallyCollapsed] = useState<boolean | null>(null);
   const [isTablet, setIsTablet] = useState(false);
   
   // Detect tablet breakpoint (md to lg: 768px to 1024px)
   useEffect(() => {
     const checkTablet = () => {
       const width = window.innerWidth;
-      setIsTablet(width >= 768 && width < 1024);
+      const tablet = width >= 768 && width < 1024;
+      setIsTablet(tablet);
+      // Auto-collapse on tablet if not manually set
+      if (isManuallyCollapsed === null && tablet) {
+        setIsManuallyCollapsed(true);
+      }
     };
     checkTablet();
     window.addEventListener('resize', checkTablet);
     return () => window.removeEventListener('resize', checkTablet);
-  }, []);
+  }, [isManuallyCollapsed]);
   
-  // Auto-collapse on tablet, or manual collapse on desktop
-  const isCollapsed = isTablet || isManuallyCollapsed;
+  // Toggle function that works for both tablet and desktop
+  const toggleCollapsed = () => {
+    setIsManuallyCollapsed(prev => prev === null ? false : !prev);
+  };
+  
+  // Use manual state if set, otherwise default to collapsed on tablet
+  const isCollapsed = isManuallyCollapsed ?? isTablet;
   
   // Handle nav click on mobile - close sidebar
   const handleNavClick = () => {
@@ -97,7 +107,7 @@ export function AdminSidebar({ onLogout, isMobileOpen = false, onMobileClose }: 
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setIsManuallyCollapsed(!isManuallyCollapsed)}
+            onClick={toggleCollapsed}
             className={cn(
               "hidden md:flex h-8 w-8 shrink-0 hover:bg-primary/20 transition-colors",
               isCollapsed && !isMobileOpen ? "mx-auto" : ""
@@ -138,10 +148,15 @@ export function AdminSidebar({ onLogout, isMobileOpen = false, onMobileClose }: 
           
           <div className="p-2 sm:p-3">
             <p className={cn(
-              "text-xs font-medium text-muted-foreground px-3 mb-2 flex items-center gap-1",
-              isCollapsed && !isMobileOpen ? "md:justify-center md:px-0" : ""
+              "text-xs font-medium px-3 mb-2 flex items-center gap-1",
+              isCollapsed && !isMobileOpen 
+                ? "md:justify-center md:px-0 text-muted-foreground/40" 
+                : "text-muted-foreground"
             )}>
-              <BarChart3 className="h-3 w-3 shrink-0" />
+              <BarChart3 className={cn(
+                "h-3 w-3 shrink-0",
+                isCollapsed && !isMobileOpen ? "opacity-40" : ""
+              )} />
               <span className={cn(isCollapsed && !isMobileOpen ? "md:hidden" : "")}>Analytics</span>
             </p>
             <div className="space-y-1">
