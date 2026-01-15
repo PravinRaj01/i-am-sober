@@ -19,6 +19,7 @@ interface ProactiveInterventionProps {
 
 export function ProactiveIntervention({ onOpenChat }: ProactiveInterventionProps) {
   const [open, setOpen] = useState(false);
+  const [dismissedInterventionId, setDismissedInterventionId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -49,10 +50,27 @@ export function ProactiveIntervention({ onOpenChat }: ProactiveInterventionProps
   });
 
   useEffect(() => {
-    if (interventionData?.needs_intervention && interventionData?.intervention) {
+    // Only open if intervention exists, not already dismissed in this session, and not already open
+    const interventionId = interventionData?.intervention?.id;
+    if (
+      interventionData?.needs_intervention && 
+      interventionId && 
+      interventionId !== dismissedInterventionId
+    ) {
       setOpen(true);
     }
-  }, [interventionData]);
+  }, [interventionData, dismissedInterventionId]);
+
+  // When dialog is closed without action, mark as dismissed for this session
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && interventionData?.intervention?.id) {
+      // Mark as dismissed so it won't reopen on refetch
+      setDismissedInterventionId(interventionData.intervention.id);
+      // Also acknowledge in database so it doesn't persist
+      acknowledgeMutation.mutate({ actionTaken: "dismissed" });
+    }
+    setOpen(newOpen);
+  };
 
   const acknowledgeMutation = useMutation({
     mutationFn: async ({ actionTaken, wasHelpful }: { actionTaken?: string; wasHelpful?: boolean }) => {
@@ -118,7 +136,7 @@ export function ProactiveIntervention({ onOpenChat }: ProactiveInterventionProps
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
