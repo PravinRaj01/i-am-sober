@@ -577,6 +577,7 @@ export type Database = {
           last_check_in: string | null
           level: number | null
           longest_streak: number | null
+          notification_preferences: Json | null
           onboarding_completed: boolean | null
           points: number | null
           privacy_settings: Json | null
@@ -594,6 +595,7 @@ export type Database = {
           last_check_in?: string | null
           level?: number | null
           longest_streak?: number | null
+          notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           points?: number | null
           privacy_settings?: Json | null
@@ -611,6 +613,7 @@ export type Database = {
           last_check_in?: string | null
           level?: number | null
           longest_streak?: number | null
+          notification_preferences?: Json | null
           onboarding_completed?: boolean | null
           points?: number | null
           privacy_settings?: Json | null
