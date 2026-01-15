@@ -270,51 +270,25 @@ const Settings = () => {
   const handleResetAccount = async () => {
     setResetLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      // Reset all user data but keep the account
-      // Delete data from child tables first (foreign key constraints)
-      await Promise.all([
-        supabase.from("community_comments").delete().eq("user_id", user.id),
-        supabase.from("community_reactions").delete().eq("user_id", user.id),
-        supabase.from("goal_completions").delete().eq("user_id", user.id),
-      ]);
-      
-      // Now delete from parent tables and reset profile
-      await Promise.all([
-        // Reset profile to defaults
-        supabase.from("profiles").update({
-          current_streak: 0,
-          longest_streak: 0,
-          xp: 0,
-          level: 1,
-          points: 0,
-          sobriety_start_date: new Date().toISOString(),
-          last_check_in: null,
-          onboarding_completed: false,
-        }).eq("id", user.id),
-        
-        // Delete all user data
-        supabase.from("check_ins").delete().eq("user_id", user.id),
-        supabase.from("journal_entries").delete().eq("user_id", user.id),
-        supabase.from("goals").delete().eq("user_id", user.id),
-        supabase.from("user_achievements").delete().eq("user_id", user.id),
-        supabase.from("coping_activities").delete().eq("user_id", user.id),
-        supabase.from("relapses").delete().eq("user_id", user.id),
-        supabase.from("triggers").delete().eq("user_id", user.id),
-        supabase.from("motivations").delete().eq("user_id", user.id),
-        supabase.from("reflections").delete().eq("user_id", user.id),
-        supabase.from("community_interactions").delete().eq("user_id", user.id),
-        supabase.from("chat_messages").delete().eq("user_id", user.id),
-        supabase.from("conversations").delete().eq("user_id", user.id),
-        supabase.from("biometric_logs").delete().eq("user_id", user.id),
-        supabase.from("ai_interventions").delete().eq("user_id", user.id),
-        supabase.from("ai_observability_logs").delete().eq("user_id", user.id),
-        supabase.from("supporters").delete().eq("user_id", user.id),
-        supabase.from("push_subscriptions").delete().eq("user_id", user.id),
-        supabase.from("online_members").delete().eq("user_id", user.id),
-      ]);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-data`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || "Failed to reset account");
+      }
 
       // Invalidate all queries
       queryClient.invalidateQueries();
@@ -323,7 +297,7 @@ const Settings = () => {
         title: "Account Reset",
         description: "Your account has been reset. Starting fresh!",
       });
-      
+
       refetch();
     } catch (error: any) {
       toast({
