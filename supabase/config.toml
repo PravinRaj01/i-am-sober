@@ -96,3 +96,15 @@ verify_jwt = false
 
 [functions.fitbit-auth]
 verify_jwt = false
+
+[functions.send-daily-reminder]
+verify_jwt = false
+
+[functions.send-weekly-report]
+verify_jwt = false
+
+[functions.send-milestone-alert]
+verify_jwt = false
+
+[functions.send-supporter-notification]
+verify_jwt = false

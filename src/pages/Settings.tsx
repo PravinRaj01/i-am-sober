@@ -47,9 +47,12 @@ const Settings = () => {
   
   // Notification settings
   const [dailyReminder, setDailyReminder] = useState(true);
+  const [dailyReminderTime, setDailyReminderTime] = useState("09:00");
   const [weeklyReport, setWeeklyReport] = useState(true);
+  const [weeklyReportDay, setWeeklyReportDay] = useState("monday");
   const [milestoneAlerts, setMilestoneAlerts] = useState(true);
   const [supporterUpdates, setSupporterUpdates] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
   // Privacy settings
   const [shareJournal, setShareJournal] = useState(false);
@@ -130,6 +133,16 @@ const Settings = () => {
           setShareCheckIns(privacy.share_check_ins || false);
           setShareMilestones(privacy.share_milestones || false);
         }
+        // Load notification preferences
+        const notifPrefs = (data as any).notification_preferences as any;
+        if (notifPrefs) {
+          setDailyReminder(notifPrefs.daily_reminder ?? true);
+          setDailyReminderTime(notifPrefs.daily_reminder_time || "09:00");
+          setWeeklyReport(notifPrefs.weekly_report ?? true);
+          setWeeklyReportDay(notifPrefs.weekly_report_day || "monday");
+          setMilestoneAlerts(notifPrefs.milestone_alerts ?? true);
+          setSupporterUpdates(notifPrefs.supporter_updates ?? false);
+        }
       }
       
       return data;
@@ -178,6 +191,44 @@ const Settings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveNotificationPrefs = async () => {
+    setNotificationLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          notification_preferences: {
+            daily_reminder: dailyReminder,
+            daily_reminder_time: dailyReminderTime,
+            weekly_report: weeklyReport,
+            weekly_report_day: weeklyReportDay,
+            milestone_alerts: milestoneAlerts,
+            supporter_updates: supporterUpdates,
+          },
+        } as any)
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Notification preferences saved!",
+        description: "Your notification settings have been updated.",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setNotificationLoading(false);
     }
   };
 
@@ -388,22 +439,68 @@ const Settings = () => {
             <CardDescription>Configure your notification preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Daily Check-in Reminder</Label>
-                <p className="text-sm text-muted-foreground">Get reminded to log your daily check-in</p>
+            {/* Daily Check-in Reminder */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Daily Check-in Reminder</Label>
+                  <p className="text-sm text-muted-foreground">Get reminded to log your daily check-in</p>
+                </div>
+                <Switch checked={dailyReminder} onCheckedChange={setDailyReminder} />
               </div>
-              <Switch checked={dailyReminder} onCheckedChange={setDailyReminder} />
+              {dailyReminder && (
+                <div className="ml-4 pl-4 border-l-2 border-border">
+                  <Label className="text-sm">Reminder Time</Label>
+                  <Select value={dailyReminderTime} onValueChange={setDailyReminderTime}>
+                    <SelectTrigger className="w-32 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="06:00">6:00 AM</SelectItem>
+                      <SelectItem value="07:00">7:00 AM</SelectItem>
+                      <SelectItem value="08:00">8:00 AM</SelectItem>
+                      <SelectItem value="09:00">9:00 AM</SelectItem>
+                      <SelectItem value="10:00">10:00 AM</SelectItem>
+                      <SelectItem value="12:00">12:00 PM</SelectItem>
+                      <SelectItem value="18:00">6:00 PM</SelectItem>
+                      <SelectItem value="20:00">8:00 PM</SelectItem>
+                      <SelectItem value="21:00">9:00 PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <Separator />
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Weekly Progress Report</Label>
-                <p className="text-sm text-muted-foreground">Receive a summary of your week</p>
+            {/* Weekly Progress Report */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Weekly Progress Report</Label>
+                  <p className="text-sm text-muted-foreground">Receive a summary of your week</p>
+                </div>
+                <Switch checked={weeklyReport} onCheckedChange={setWeeklyReport} />
               </div>
-              <Switch checked={weeklyReport} onCheckedChange={setWeeklyReport} />
+              {weeklyReport && (
+                <div className="ml-4 pl-4 border-l-2 border-border">
+                  <Label className="text-sm">Report Day</Label>
+                  <Select value={weeklyReportDay} onValueChange={setWeeklyReportDay}>
+                    <SelectTrigger className="w-32 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monday">Monday</SelectItem>
+                      <SelectItem value="tuesday">Tuesday</SelectItem>
+                      <SelectItem value="wednesday">Wednesday</SelectItem>
+                      <SelectItem value="thursday">Thursday</SelectItem>
+                      <SelectItem value="friday">Friday</SelectItem>
+                      <SelectItem value="saturday">Saturday</SelectItem>
+                      <SelectItem value="sunday">Sunday</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <Separator />
@@ -438,7 +535,7 @@ const Settings = () => {
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     {isSupported 
-                      ? "Receive proactive AI check-ins and reminders" 
+                      ? "Enable to receive all the above notifications" 
                       : "Not supported in this browser"}
                   </p>
                 </div>
@@ -474,11 +571,26 @@ const Settings = () => {
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                   <p className="text-sm text-primary">
-                    Push notifications are enabled. You'll receive AI check-ins and reminders.
+                    Push notifications are enabled. You'll receive the notifications you've enabled above.
                   </p>
                 </div>
               )}
             </div>
+
+            <Button 
+              onClick={handleSaveNotificationPrefs} 
+              disabled={notificationLoading}
+              className="w-full"
+            >
+              {notificationLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Notification Preferences"
+              )}
+            </Button>
           </CardContent>
         </Card>
 
