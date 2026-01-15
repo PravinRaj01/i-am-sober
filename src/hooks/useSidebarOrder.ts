@@ -9,9 +9,8 @@ const DEFAULT_ORDER = [
   "Progress",
   "Achievements",
   "Wearables",
-  "Recovery Insights",
   "AI Coach",
-  "AI Observability",
+  "AI Insights",
   "Community",
 ];
 

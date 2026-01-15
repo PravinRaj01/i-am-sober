@@ -90,7 +90,7 @@ const Settings = () => {
         window.dispatchEvent(new Event('storage')); // Notify sidebar
         toast({
           title: "🎮 Developer Mode Unlocked!",
-          description: "You found the secret! AI Observability is now accessible.",
+          description: "You found the secret! AI Insights is now accessible.",
         });
         setKonamiIndicator(0);
         navigate('/ai-observability');
@@ -362,7 +362,7 @@ const Settings = () => {
         window.dispatchEvent(new Event('storage'));
         toast({
           title: "🎮 Developer Mode Unlocked!",
-          description: "You found the secret! AI Observability is now accessible.",
+          description: "You found the secret! AI Insights is now accessible.",
         });
         setTapCount(0);
         navigate('/ai-observability');
@@ -739,7 +739,7 @@ const Settings = () => {
               <div className="space-y-3 pt-2 border-t border-border/50">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-medium">AI Observability Dashboard</Label>
+                    <Label className="text-sm font-medium">AI Insights Dashboard</Label>
                     <p className="text-xs text-muted-foreground">Monitor AI interactions and performance</p>
                   </div>
                   <Button 
@@ -758,14 +758,14 @@ const Settings = () => {
                       size="sm"
                       className="text-xs text-muted-foreground hover:text-destructive w-full justify-start"
                     >
-                      Disable AI Observability access
+                      Disable AI Insights access
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Disable AI Observability?</AlertDialogTitle>
+                      <AlertDialogTitle>Disable AI Insights?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will hide the AI Observability page from the sidebar. To re-enable it, you'll need to enter the Konami code again in Settings.
+                        This will hide the AI Insights page from the sidebar. To re-enable it, you'll need to enter the Konami code again in Settings.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -775,7 +775,7 @@ const Settings = () => {
                           localStorage.removeItem('devToolsUnlocked');
                           window.dispatchEvent(new Event('storage'));
                           toast({
-                            title: "AI Observability disabled",
+                            title: "AI Insights disabled",
                             description: "Enter the Konami code to unlock it again.",
                           });
                         }}

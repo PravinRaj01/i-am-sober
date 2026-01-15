@@ -13,8 +13,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Progress": TrendingUp,
   "Achievements": Trophy,
   "Wearables": Watch,
-  "Recovery Insights": Sparkles,
-  "AI Observability": Brain,
+  "AI Coach": Sparkles,
+  "AI Insights": Brain,
   "Community": Users,
 };
 
@@ -90,9 +90,9 @@ const SidebarOrderEditor = ({ onSave }: SidebarOrderEditorProps) => {
 
   const isDevUnlocked = localStorage.getItem('devToolsUnlocked') === 'true';
 
-  // Filter out AI Observability if not unlocked
+  // Filter out AI Insights if not unlocked
   const displayOrder = localOrder.filter(item => {
-    if (item === "AI Observability" && !isDevUnlocked) return false;
+    if (item === "AI Insights" && !isDevUnlocked) return false;
     return true;
   });
 
