@@ -270,24 +270,23 @@ const Settings = () => {
   const handleResetAccount = async () => {
     setResetLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const { data, error } = await supabase.functions.invoke("reset-user-data", {
+        body: {},
+      });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-data`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
+      if (error) {
+        // Try to surface the edge function's JSON error message
+        let message = error.message;
+        try {
+          const ctx = (error as any).context as Response | undefined;
+          if (ctx) {
+            const json = await ctx.json().catch(() => null);
+            if (json?.error) message = json.error;
+          }
+        } catch {
+          // ignore
         }
-      );
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.error || "Failed to reset account");
+        throw new Error(message);
       }
 
       // Invalidate all queries
@@ -299,6 +298,7 @@ const Settings = () => {
       });
 
       refetch();
+      return data;
     } catch (error: any) {
       toast({
         title: "Error",
