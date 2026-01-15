@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CardHeader, CardContent } from "@/components/ui/card";
-import { Loader2, Send, Sparkles, Minimize2, X, Maximize2, Plus, Trash2, MessageSquare, ChevronDown } from "lucide-react";
+import { Loader2, Send, Sparkles, Minimize2, X, Maximize2, Plus, Trash2, MessageSquare, ChevronDown, Mic, MicOff } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import QuickActions from "./QuickActions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,6 +11,7 @@ import StorageImage from "@/components/StorageImage";
 import { Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +38,7 @@ interface ChatbotFullViewProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
-  onMinimize: () => void;
+  onMinimize?: () => void;
   onExpandToFull?: () => void;
   onClose: () => void;
   onQuickAction: (message: string) => void;
@@ -77,6 +78,21 @@ const ChatbotFullView = ({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Voice recording
+  const handleTranscription = (text: string) => {
+    onInputChange(text);
+  };
+  
+  const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording(handleTranscription);
+
+  const handleVoiceToggle = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -131,7 +147,6 @@ const ChatbotFullView = ({
                     <DropdownMenuItem
                       className="flex-1 cursor-pointer"
                       onSelect={(e) => {
-                        // Prevent selection when interacting with the input, but allow selection of the item itself
                         if ((e.target as HTMLElement).closest('input')) {
                           e.preventDefault();
                           return;
@@ -268,15 +283,17 @@ const ChatbotFullView = ({
                 <Maximize2 className="h-4 w-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onMinimize}
-              className="h-8 w-8 hover:bg-primary/10"
-              title="Minimize"
-            >
-              <Minimize2 className="h-4 w-4" />
-            </Button>
+            {onMinimize && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onMinimize}
+                className="h-8 w-8 hover:bg-primary/10"
+                title="Minimize"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -355,19 +372,42 @@ const ChatbotFullView = ({
             onSend();
           }}
         >
-          <div className="relative">
-            <Input
-              value={input}
-              onChange={(e) => onInputChange(e.target.value)}
-              placeholder="Ask me anything about your recovery..."
-              disabled={streaming}
-              className="pr-12 h-11 text-base flex-1 bg-background/50 border-primary/20 focus:border-primary/40 transition-colors"
-            />
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Input
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                placeholder={isRecording ? "Listening..." : isProcessing ? "Processing..." : "Ask me anything..."}
+                disabled={streaming || isRecording || isProcessing}
+                className="pr-4 h-11 text-base bg-background/50 border-primary/20 focus:border-primary/40 transition-colors"
+              />
+            </div>
+            
+            {/* Voice Recording Button */}
+            <Button
+              type="button"
+              onClick={handleVoiceToggle}
+              disabled={streaming || isProcessing}
+              size="icon"
+              variant={isRecording ? "destructive" : "outline"}
+              className={`h-11 w-11 shrink-0 ${isRecording ? 'animate-pulse' : ''}`}
+              title={isRecording ? "Stop recording" : "Voice input"}
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isRecording ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+            
+            {/* Send Button */}
             <Button
               type="submit"
               disabled={!input.trim() || streaming}
               size="icon"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-primary hover:shadow-glow transition-all h-8 w-8"
+              className="h-11 w-11 shrink-0 bg-gradient-primary hover:shadow-glow transition-all"
             >
               {streaming ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -378,7 +418,7 @@ const ChatbotFullView = ({
           </div>
         </form>
         <p className="text-xs text-muted-foreground text-center mt-2">
-          Powered by AI • Here to help you succeed
+          Powered by AI • Tap mic for voice input
         </p>
       </div>
     </div>

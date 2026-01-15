@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Loader2, 
   Send, 
@@ -16,21 +16,16 @@ import {
   Plus, 
   Trash2, 
   MessageSquare, 
-  ChevronDown,
-  Bot
+  Bot,
+  ArrowLeft,
+  Mic,
+  MicOff,
+  Search
 } from "lucide-react";
 import ChatMessage from "@/components/chatbot/ChatMessage";
 import QuickActions from "@/components/chatbot/QuickActions";
 import StorageImage from "@/components/StorageImage";
 import OpikBadge from "@/components/OpikBadge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,12 +36,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { formatDistanceToNow } from "date-fns";
 
 const AIAgent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -54,6 +52,15 @@ const AIAgent = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [showConversationList, setShowConversationList] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Voice recording
+  const handleTranscription = (text: string) => {
+    setInput(text);
+  };
+  
+  const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording(handleTranscription);
 
   // Initialize conversation
   useEffect(() => {
@@ -73,6 +80,7 @@ const AIAgent = () => {
 
       if (conversations && conversations.length > 0) {
         setCurrentConversationId(conversations[0].id);
+        if (!isMobile) setShowConversationList(true);
       } else {
         const { data: newConv } = await supabase
           .from("conversations")
@@ -85,7 +93,7 @@ const AIAgent = () => {
     };
 
     initConversation();
-  }, [navigate]);
+  }, [navigate, isMobile]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -130,14 +138,9 @@ const AIAgent = () => {
     enabled: !!currentConversationId,
   });
 
-  const handleConversationTitleChange = (convId: string, newTitle: string) => {
-    queryClient.setQueryData(['conversations'], (oldData: any[] | undefined) => {
-      if (!oldData) return [];
-      return oldData.map(conv => 
-        conv.id === convId ? { ...conv, title: newTitle } : conv
-      );
-    });
-  };
+  const filteredConversations = conversations?.filter(conv => 
+    conv.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const saveMessageMutation = useMutation({
     mutationFn: async ({ role, content }: { role: string; content: string }) => {
@@ -198,7 +201,7 @@ const AIAgent = () => {
 
       const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch(
-        `https://jivpbjhroujuoatdqtpx.supabase.co/functions/v1/chat-with-ai`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-with-ai`,
         {
           method: "POST",
           headers: {
@@ -270,10 +273,17 @@ const AIAgent = () => {
     if (newConv) {
       setCurrentConversationId(newConv.id);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      if (isMobile) setShowConversationList(false);
     }
   };
 
+  const handleSelectConversation = (convId: string) => {
+    setCurrentConversationId(convId);
+    if (isMobile) setShowConversationList(false);
+  };
+
   const handleDeleteConversation = async (convId: string) => {
+    await supabase.from("chat_messages").delete().eq("conversation_id", convId);
     await supabase.from("conversations").delete().eq("id", convId);
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
     
@@ -299,6 +309,14 @@ const AIAgent = () => {
     });
   };
 
+  const handleVoiceToggle = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const TypingIndicator = () => (
     <div className="flex items-center gap-2 p-4">
       <Avatar className="h-8 w-8 border-2 border-primary/20 bg-card">
@@ -322,14 +340,120 @@ const AIAgent = () => {
     </div>
   );
 
-  return (
+  // Conversation List Component
+  const ConversationList = () => (
+    <div className="flex flex-col h-full bg-card/95 border-r border-border/50">
+      {/* Header */}
+      <div className="p-4 border-b border-border/50">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold">Chats</h2>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleNewConversation}
+            className="h-8 w-8"
+            title="New conversation"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search chats..."
+            className="pl-9 h-9 bg-muted/50"
+          />
+        </div>
+      </div>
+      
+      {/* Conversation List */}
+      <ScrollArea className="flex-1">
+        <div className="p-2 space-y-1">
+          {filteredConversations?.map((conv) => (
+            <div
+              key={conv.id}
+              onClick={() => handleSelectConversation(conv.id)}
+              className={`
+                group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all
+                ${conv.id === currentConversationId 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'hover:bg-muted/50'
+                }
+              `}
+            >
+              <Avatar className={`h-10 w-10 border-2 ${conv.id === currentConversationId ? 'border-primary-foreground/30' : 'border-primary/20'} bg-card shrink-0`}>
+                <AvatarFallback className={conv.id === currentConversationId ? 'bg-primary-foreground/20' : 'bg-primary/10'}>
+                  <MessageSquare className={`h-4 w-4 ${conv.id === currentConversationId ? 'text-primary-foreground' : 'text-primary'}`} />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{conv.title || "New Conversation"}</p>
+                <p className={`text-xs truncate ${conv.id === currentConversationId ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                  {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
+                </p>
+              </div>
+              {conversations && conversations.length > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConversationToDelete(conv.id);
+                    setShowDeleteDialog(true);
+                  }}
+                  className={`
+                    h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity
+                    ${conv.id === currentConversationId 
+                      ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
+                      : 'hover:bg-destructive/10 hover:text-destructive'
+                    }
+                  `}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          ))}
+          
+          {(!filteredConversations || filteredConversations.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No conversations yet</p>
+              <Button
+                variant="link"
+                onClick={handleNewConversation}
+                className="text-primary mt-2"
+              >
+                Start your first chat
+              </Button>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
+  // Chat View Component
+  const ChatView = () => (
     <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-40">
-        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+        <div className="px-4 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="lg:hidden" />
-            <Avatar className="h-10 w-10 border-2 border-primary/20 bg-card hidden sm:flex">
+            {isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowConversationList(true)}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            {!isMobile && <SidebarTrigger className="lg:hidden" />}
+            <Avatar className="h-10 w-10 border-2 border-primary/20 bg-card">
               <StorageImage
                 bucket="logos"
                 path="logo.png"
@@ -344,7 +468,9 @@ const AIAgent = () => {
             </Avatar>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold truncate">AI Coach</h1>
+                <h1 className="text-lg font-bold truncate">
+                  {conversations?.find(c => c.id === currentConversationId)?.title || "AI Coach"}
+                </h1>
                 <Sparkles className="h-4 w-4 text-primary animate-pulse shrink-0" />
               </div>
               <p className="text-xs text-muted-foreground hidden sm:block">Your intelligent recovery companion</p>
@@ -364,116 +490,6 @@ const AIAgent = () => {
           </div>
         </div>
       </header>
-
-      {/* Conversation Selector */}
-      {conversations && conversations.length > 0 && (
-        <div className="px-4 sm:px-6 py-3 border-b border-border/30 flex items-center justify-between gap-2 bg-card/50">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 max-w-[300px]">
-                <MessageSquare className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {conversations.find(c => c.id === currentConversationId)?.title || "New Conversation"}
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[300px] max-h-[400px] overflow-y-auto">
-              <DropdownMenuLabel>Conversations</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {conversations.map((conv) => (
-                <div key={conv.id} className="flex items-center group pr-2">
-                  <DropdownMenuItem
-                    className="flex-1 cursor-pointer"
-                    onSelect={(e) => {
-                      if ((e.target as HTMLElement).closest('input')) {
-                        e.preventDefault();
-                        return;
-                      }
-                      setCurrentConversationId(conv.id);
-                    }}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2 shrink-0" />
-                    <input
-                      type="text"
-                      value={conv.title ?? "New Conversation"}
-                      onChange={(e) => handleConversationTitleChange(conv.id, e.target.value)}
-                      onBlur={async (e) => {
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (!user) return;
-                        
-                        await supabase
-                          .from("conversations")
-                          .update({ title: e.target.value })
-                          .eq("id", conv.id);
-                        
-                        queryClient.invalidateQueries({ queryKey: ["conversations"] });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          (e.target as HTMLInputElement).blur();
-                        }
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="bg-transparent border-none outline-none flex-1 text-sm w-full"
-                    />
-                  </DropdownMenuItem>
-                  {conversations.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConversationToDelete(conv.id);
-                        setShowDeleteDialog(true);
-                      }}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNewConversation}
-            className="shrink-0"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New
-          </Button>
-        </div>
-      )}
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this conversation and all its messages.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (conversationToDelete) {
-                  handleDeleteConversation(conversationToDelete);
-                  setShowDeleteDialog(false);
-                  setConversationToDelete(null);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
@@ -542,34 +558,114 @@ const AIAgent = () => {
               handleSend();
             }}
           >
-            <div className="relative">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything about your recovery..."
-                disabled={streaming}
-                className="pr-14 h-12 text-base bg-background/50 border-primary/20 focus:border-primary/40"
-              />
+            <div className="relative flex gap-2">
+              <div className="flex-1 relative">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={isRecording ? "Listening..." : isProcessing ? "Processing..." : "Ask me anything about your recovery..."}
+                  disabled={streaming || isRecording || isProcessing}
+                  className="pr-4 h-12 text-base bg-background/50 border-primary/20 focus:border-primary/40"
+                />
+              </div>
+              
+              {/* Voice Recording Button */}
+              <Button
+                type="button"
+                onClick={handleVoiceToggle}
+                disabled={streaming || isProcessing}
+                size="icon"
+                variant={isRecording ? "destructive" : "outline"}
+                className={`h-12 w-12 shrink-0 ${isRecording ? 'animate-pulse' : ''}`}
+                title={isRecording ? "Stop recording" : "Start voice recording"}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isRecording ? (
+                  <MicOff className="h-5 w-5" />
+                ) : (
+                  <Mic className="h-5 w-5" />
+                )}
+              </Button>
+              
+              {/* Send Button */}
               <Button
                 type="submit"
                 disabled={!input.trim() || streaming}
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-gradient-primary hover:shadow-glow transition-all h-9 w-9"
+                className="h-12 w-12 shrink-0 bg-gradient-primary hover:shadow-glow transition-all"
               >
                 {streaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 )}
               </Button>
             </div>
           </form>
           <p className="text-xs text-muted-foreground text-center mt-3">
-            Powered by Agentic AI • Can take actions on your behalf
+            Powered by Agentic AI • Tap mic to send voice notes
           </p>
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Delete Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this conversation and all its messages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (conversationToDelete) {
+                  handleDeleteConversation(conversationToDelete);
+                  setShowDeleteDialog(false);
+                  setConversationToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Layout */}
+      <div className="flex h-full">
+        {/* Mobile: Show either list or chat */}
+        {isMobile ? (
+          showConversationList ? (
+            <div className="w-full h-full">
+              <ConversationList />
+            </div>
+          ) : (
+            <div className="w-full h-full">
+              <ChatView />
+            </div>
+          )
+        ) : (
+          /* Desktop: Show both side by side */
+          <>
+            <div className="w-80 shrink-0 h-full hidden md:block">
+              <ConversationList />
+            </div>
+            <div className="flex-1 h-full min-w-0">
+              <ChatView />
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
