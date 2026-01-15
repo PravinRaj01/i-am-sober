@@ -60,6 +60,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // Add push event handler
+        additionalManifestEntries: [],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -91,6 +93,11 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
+      // Custom service worker for push notifications
+      injectRegister: 'auto',
+      devOptions: {
+        enabled: false
+      }
     }),
   ].filter(Boolean),
   resolve: {
