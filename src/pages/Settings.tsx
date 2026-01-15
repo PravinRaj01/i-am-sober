@@ -297,6 +297,9 @@ const Settings = () => {
         description: "Your account has been reset. Starting fresh!",
       });
 
+      // Send user straight into onboarding (no need to wait for another navigation)
+      navigate("/onboarding", { replace: true });
+
       refetch();
       return data;
     } catch (error: any) {
