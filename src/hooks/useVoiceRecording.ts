@@ -75,28 +75,16 @@ export const useVoiceRecording = (onTranscription: (text: string) => void) => {
       
       const base64Audio = btoa(binary);
       
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Call transcription edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ audio: base64Audio }),
-        }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to transcribe audio');
+      // Call transcription edge function using supabase client
+      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64Audio },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to transcribe audio');
       }
       
-      const data = await response.json();
-      
-      if (data.text) {
+      if (data?.text) {
         onTranscription(data.text);
       } else {
         toast({

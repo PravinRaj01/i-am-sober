@@ -20,7 +20,9 @@ import {
   ArrowLeft,
   Mic,
   MicOff,
-  Search
+  Search,
+  MoreVertical,
+  Pencil
 } from "lucide-react";
 import ChatMessage from "@/components/chatbot/ChatMessage";
 import QuickActions from "@/components/chatbot/QuickActions";
@@ -36,6 +38,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { formatDistanceToNow } from "date-fns";
 
@@ -54,6 +75,11 @@ const AIAgent = () => {
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [showConversationList, setShowConversationList] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Rename dialog
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [conversationToRename, setConversationToRename] = useState<string | null>(null);
+  const [newConversationTitle, setNewConversationTitle] = useState("");
 
   // Voice recording
   const handleTranscription = (text: string) => {
@@ -293,6 +319,25 @@ const AIAgent = () => {
     }
   };
 
+  const handleRenameConversation = async () => {
+    if (!conversationToRename || !newConversationTitle.trim()) return;
+    
+    await supabase
+      .from("conversations")
+      .update({ title: newConversationTitle.trim() })
+      .eq("id", conversationToRename);
+    
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    setShowRenameDialog(false);
+    setConversationToRename(null);
+    setNewConversationTitle("");
+    
+    toast({
+      title: "Conversation renamed",
+      description: "The conversation title has been updated.",
+    });
+  };
+
   const handleClearChat = async () => {
     if (!currentConversationId) return;
     
@@ -315,6 +360,12 @@ const AIAgent = () => {
     } else {
       startRecording();
     }
+  };
+
+  const openRenameDialog = (convId: string, currentTitle: string) => {
+    setConversationToRename(convId);
+    setNewConversationTitle(currentTitle);
+    setShowRenameDialog(true);
   };
 
   const TypingIndicator = () => (
@@ -394,26 +445,47 @@ const AIAgent = () => {
                   {formatDistanceToNow(new Date(conv.updated_at), { addSuffix: true })}
                 </p>
               </div>
-              {conversations && conversations.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
+              
+              {/* 3-dot Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`
+                      h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity
+                      ${conv.id === currentConversationId 
+                        ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
+                        : 'hover:bg-muted text-muted-foreground'
+                      }
+                    `}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
-                    setConversationToDelete(conv.id);
-                    setShowDeleteDialog(true);
-                  }}
-                  className={`
-                    h-7 w-7 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity
-                    ${conv.id === currentConversationId 
-                      ? 'hover:bg-primary-foreground/20 text-primary-foreground' 
-                      : 'hover:bg-destructive/10 hover:text-destructive'
-                    }
-                  `}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              )}
+                    openRenameDialog(conv.id, conv.title || "New Conversation");
+                  }}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                  {conversations && conversations.length > 1 && (
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConversationToDelete(conv.id);
+                        setShowDeleteDialog(true);
+                      }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
           
@@ -640,6 +712,36 @@ const AIAgent = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Rename Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Conversation</DialogTitle>
+            <DialogDescription>
+              Enter a new name for this conversation.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newConversationTitle}
+            onChange={(e) => setNewConversationTitle(e.target.value)}
+            placeholder="Conversation name..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleRenameConversation();
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameConversation} disabled={!newConversationTitle.trim()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Layout */}
       <div className="flex h-full">
         {/* Mobile: Show either list or chat */}
@@ -654,15 +756,16 @@ const AIAgent = () => {
             </div>
           )
         ) : (
-          /* Desktop: Show both side by side */
-          <>
-            <div className="w-80 shrink-0 h-full hidden md:block">
+          /* Desktop: Resizable panels */
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="hidden md:block">
               <ConversationList />
-            </div>
-            <div className="flex-1 h-full min-w-0">
+            </ResizablePanel>
+            <ResizableHandle withHandle className="hidden md:flex" />
+            <ResizablePanel defaultSize={75} minSize={50}>
               <ChatView />
-            </div>
-          </>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         )}
       </div>
     </>
