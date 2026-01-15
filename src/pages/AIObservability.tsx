@@ -2,18 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import OpikBadge from "@/components/OpikBadge";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { 
   Brain, 
   Clock, 
-  AlertTriangle, 
   CheckCircle2, 
   TrendingUp,
   BarChart3,
-  Sparkles
+  Sparkles,
+  MessageCircle,
+  Heart,
+  Target,
+  Calendar
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, differenceInDays, subDays } from "date-fns";
 import {
   LineChart,
   Line,
@@ -27,6 +31,7 @@ import {
 } from "recharts";
 
 const AIObservability = () => {
+  // AI Observability logs
   const { data: logs, isLoading } = useQuery({
     queryKey: ["ai-observability-logs"],
     queryFn: async () => {
@@ -63,6 +68,78 @@ const AIObservability = () => {
     },
   });
 
+  // Recovery insights data (merged from AIRecoveryInsights)
+  const { data: aiStats } = useQuery({
+    queryKey: ["ai-recovery-stats"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const weekAgo = subDays(new Date(), 7);
+      const twoWeeksAgo = subDays(new Date(), 14);
+
+      const { data: thisWeek } = await supabase
+        .from("ai_observability_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("created_at", weekAgo.toISOString());
+
+      const { data: lastWeek } = await supabase
+        .from("ai_observability_logs")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("created_at", twoWeeksAgo.toISOString())
+        .lt("created_at", weekAgo.toISOString());
+
+      const { data: chatMessages } = await supabase
+        .from("chat_messages")
+        .select("id")
+        .eq("user_id", user.id)
+        .gte("created_at", weekAgo.toISOString());
+
+      return {
+        thisWeekCount: thisWeek?.length || 0,
+        lastWeekCount: lastWeek?.length || 0,
+        chatCount: chatMessages?.length || 0,
+      };
+    },
+  });
+
+  // Coping effectiveness
+  const { data: copingData } = useQuery({
+    queryKey: ["coping-effectiveness"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: activities } = await supabase
+        .from("coping_activities")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("times_used", { ascending: false })
+        .limit(5);
+
+      return activities || [];
+    },
+  });
+
+  // User profile for days sober
+  const { data: profile } = useQuery({
+    queryKey: ["profile-insights"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      return data;
+    },
+  });
+
   // Compute simple metrics
   const totalCalls = logs?.length || 0;
   const avgResponseTime = logs?.length 
@@ -70,6 +147,10 @@ const AIObservability = () => {
     : 0;
   const errorCount = logs?.filter(l => l.error_message)?.length || 0;
   const successRate = totalCalls > 0 ? Math.round(((totalCalls - errorCount) / totalCalls) * 100) : 100;
+  const weeklyChange = aiStats ? aiStats.thisWeekCount - aiStats.lastWeekCount : 0;
+  const daysSober = profile?.sobriety_start_date 
+    ? differenceInDays(new Date(), new Date(profile.sobriety_start_date))
+    : 0;
 
   // Function distribution - top 5
   const functionCounts = (logs || []).reduce((acc: Record<string, number>, log) => {
@@ -98,14 +179,57 @@ const AIObservability = () => {
       />
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Recovery Summary - New merged section */}
+          <Card className="bg-gradient-to-r from-primary/10 to-green-500/10 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 mb-4">
+                <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">Your AI-Powered Recovery</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {aiStats?.thisWeekCount === 0 
+                      ? "Start chatting with your AI coach to get personalized insights!"
+                      : `This week, you used AI support ${aiStats?.thisWeekCount} times. ${
+                          weeklyChange > 0 
+                            ? `That's ${weeklyChange} more than last week!` 
+                            : weeklyChange < 0
+                              ? `You're using it less frequently - that could be a sign of growing confidence!`
+                              : "Consistent engagement is key to recovery!"
+                        }`
+                    }
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-card/50 text-center">
+                  <p className="text-2xl font-bold text-green-600">{daysSober}</p>
+                  <p className="text-xs text-muted-foreground">Days Sober</p>
+                </div>
+                <div className="p-3 rounded-lg bg-card/50 text-center">
+                  <p className="text-2xl font-bold text-primary">{aiStats?.thisWeekCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">AI Calls</p>
+                </div>
+                <div className="p-3 rounded-lg bg-card/50 text-center">
+                  <p className="text-2xl font-bold text-amber-600">{aiStats?.chatCount || 0}</p>
+                  <p className="text-xs text-muted-foreground">Chats</p>
+                </div>
+                <div className="p-3 rounded-lg bg-card/50 text-center">
+                  <p className="text-2xl font-bold text-purple-600">{interventions?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">Check-ins</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Brain className="h-4 w-4 text-primary" />
-                  <span className="text-xs text-muted-foreground">AI Calls</span>
+                  <span className="text-xs text-muted-foreground">Total AI Calls</span>
                 </div>
                 <p className="text-2xl font-bold">{totalCalls}</p>
               </CardContent>
@@ -134,8 +258,8 @@ const AIObservability = () => {
             <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  <span className="text-xs text-muted-foreground">Check-ins</span>
+                  <Heart className="h-4 w-4 text-amber-500" />
+                  <span className="text-xs text-muted-foreground">Proactive</span>
                 </div>
                 <p className="text-2xl font-bold">{interventions?.length || 0}</p>
               </CardContent>
@@ -231,6 +355,40 @@ const AIObservability = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Coping Strategies - Merged from Recovery Insights */}
+          {copingData && copingData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Target className="h-4 w-4 text-primary" />
+                  Your Top Coping Strategies
+                </CardTitle>
+                <CardDescription className="text-xs">Activities you've used most often</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {copingData.map((activity: any, index: number) => (
+                    <div key={activity.id} className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-muted-foreground w-6">#{index + 1}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm">{activity.activity_name}</span>
+                          <Badge variant="secondary" className="text-xs">{activity.category}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Progress value={(activity.times_used / (copingData[0]?.times_used || 1)) * 100} className="h-2" />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {activity.times_used}x
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recent Activity */}
           <Card>

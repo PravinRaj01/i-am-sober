@@ -254,7 +254,7 @@ const Settings = () => {
           xp: 0,
           level: 1,
           points: 0,
-          sobriety_start_date: new Date().toISOString().split('T')[0],
+          sobriety_start_date: new Date().toISOString(),
           last_check_in: null,
         }).eq("id", user.id),
         
