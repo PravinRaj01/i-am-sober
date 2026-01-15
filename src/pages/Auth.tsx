@@ -266,17 +266,18 @@ const Auth = () => {
 
           {/* Remember Me Checkbox - Only show for login */}
           {isLogin && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <Checkbox
                 id="rememberMe"
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                className="h-5 w-5 rounded-md border-2 border-primary data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
               <Label 
                 htmlFor="rememberMe" 
-                className="text-sm font-normal cursor-pointer text-muted-foreground"
+                className="text-sm font-medium cursor-pointer text-foreground"
               >
-                Remember me for 7 days
+                Remember me
               </Label>
             </div>
           )}
